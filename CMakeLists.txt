@@ -20,7 +20,7 @@ endif()
 
 # --- Compilers ---
 
-if(CMAKE_HOST_APPLE)
+if(CMAKE_HOST_APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
   include(SetupMacSDK)
 endif()
 include(SetupLLVM)

@@ -973,10 +973,11 @@ if(NOT WIN32)
   target_compile_options(${bun} PUBLIC
     -fconstexpr-steps=2542484
     -fconstexpr-depth=54
-    -fno-pic
-    -fno-pie
     -faddrsig
   )
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_compile_options(${bun} PUBLIC -fno-pic -fno-pie)
+  endif()
   if(DEBUG)
     # TODO: this shouldn't be necessary long term
     if (NOT ABI STREQUAL "musl")
