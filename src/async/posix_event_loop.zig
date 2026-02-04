@@ -1095,7 +1095,7 @@ pub const FilePoll = struct {
 };
 
 pub const Waker = switch (Environment.os) {
-    .mac => KEventWaker,
+    .mac, .ios => KEventWaker,
     .linux => LinuxWaker,
     .windows, .wasm => @compileError("unreachable"),
 };

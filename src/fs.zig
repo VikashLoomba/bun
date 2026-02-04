@@ -571,7 +571,7 @@ pub const FileSystem = struct {
                         .{strings.withoutTrailingSlash(root)},
                     ) catch |err| bun.handleOom(err);
                 },
-                .mac => "/private/tmp",
+                .mac, .ios => "/private/tmp",
                 else => "/tmp",
             };
         }

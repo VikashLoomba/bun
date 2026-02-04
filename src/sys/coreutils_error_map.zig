@@ -139,7 +139,7 @@ pub const coreutils_error_map = brk: {
         },
         // Mac has slightly different messages. To keep it consistent with bash/coreutils,
         // it will use those altered messages.
-        .mac => &.{
+        .mac, .ios => &.{
             .{ "E2BIG", "Argument list too long" },
             .{ "EACCES", "Permission denied" },
             .{ "EADDRINUSE", "Address already in use" },

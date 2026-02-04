@@ -684,6 +684,13 @@ fn getTranslateC(b: *Build, initial_target: std.Build.ResolvedTarget, optimize: 
 
     translate_c.addIncludePath(b.path("vendor/zstd/lib"));
 
+    if (target.result.os.tag == .ios) {
+        // iOS needs the SDK sysroot for system headers (ifaddrs.h, etc.)
+        if (b.graph.env_map.get("IOS_SYSROOT")) |sysroot| {
+            translate_c.addSystemIncludePath(.{ .cwd_relative = b.fmt("{s}/usr/include", .{sysroot}) });
+        }
+    }
+
     if (target.result.os.tag == .windows) {
         // translate-c is unable to translate the unsuffixed windows functions
         // like `SetCurrentDirectory` since they are defined with an odd macro
@@ -728,6 +735,7 @@ pub fn addBunObject(b: *Build, opts: *BunBuildOptions) *Compile {
         // Root module gets compilation flags. Forwarded as default to dependencies.
         .target = opts.target,
         .optimize = opts.optimize,
+        .single_threaded = false,
     });
     root.addImport("bun", bun);
 

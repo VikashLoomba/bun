@@ -36,7 +36,7 @@ const CPUTimes = struct {
 pub fn cpus(global: *jsc.JSGlobalObject) bun.JSError!jsc.JSValue {
     const cpusImpl = switch (Environment.os) {
         .linux => cpusImplLinux,
-        .mac => cpusImplDarwin,
+        .mac, .ios => cpusImplDarwin,
         .windows => cpusImplWindows,
         .wasm => @compileError("Unsupported OS"),
     };
@@ -406,7 +406,7 @@ pub fn hostname(global: *jsc.JSGlobalObject) bun.JSError!jsc.JSValue {
 
 pub fn loadavg(global: *jsc.JSGlobalObject) bun.JSError!jsc.JSValue {
     const result = switch (bun.Environment.os) {
-        .mac => loadavg: {
+        .mac, .ios => loadavg: {
             var avg: c.struct_loadavg = undefined;
             var size: usize = @sizeOf(@TypeOf(avg));
 
@@ -450,7 +450,7 @@ pub fn loadavg(global: *jsc.JSGlobalObject) bun.JSError!jsc.JSValue {
 }
 
 pub const networkInterfaces = switch (Environment.os) {
-    .linux, .mac => networkInterfacesPosix,
+    .linux, .mac, .ios => networkInterfacesPosix,
     .windows => networkInterfacesWindows,
     .wasm => @compileError("Unsupported OS"),
 };
@@ -762,7 +762,7 @@ pub fn release() bun.String {
 
             break :slice name_buffer[0..result.len];
         },
-        .mac => slice: {
+        .mac, .ios => slice: {
             @memset(&name_buffer, 0);
 
             var size: usize = name_buffer.len;
@@ -857,7 +857,7 @@ pub fn setPriority2(global: *jsc.JSGlobalObject, priority: i32) !void {
 
 pub fn totalmem() u64 {
     switch (bun.Environment.os) {
-        .mac => {
+        .mac, .ios => {
             var memory_: [32]c_ulonglong = undefined;
             var size: usize = memory_.len;
 
@@ -901,7 +901,7 @@ pub fn uptime(global: *jsc.JSGlobalObject) bun.JSError!f64 {
             }
             return uptime_value;
         },
-        .mac => {
+        .mac, .ios => {
             var boot_time: std.posix.timeval = undefined;
             var size: usize = @sizeOf(@TypeOf(boot_time));
 
@@ -958,7 +958,7 @@ pub fn version() bun.JSError!bun.String {
     var name_buffer: [bun.HOST_NAME_MAX]u8 = undefined;
 
     const slice: []const u8 = switch (Environment.os) {
-        .mac => slice: {
+        .mac, .ios => slice: {
             @memset(&name_buffer, 0);
 
             var size: usize = name_buffer.len;

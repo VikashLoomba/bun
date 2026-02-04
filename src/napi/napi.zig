@@ -2006,7 +2006,7 @@ const V8API = if (!bun.Environment.isWindows) struct {
 
 /// V8 API functions whose mangled name differs between Linux and macOS
 const posix_platform_specific_v8_apis = switch (bun.Environment.os) {
-    .mac => struct {
+    .mac, .ios => struct {
         pub extern fn _ZN2v85Array3NewENS_5LocalINS_7ContextEEEmNSt3__18functionIFNS_10MaybeLocalINS_5ValueEEEvEEE() *anyopaque;
     },
     .linux => struct {

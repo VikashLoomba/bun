@@ -36,7 +36,7 @@ pub const Version = struct {
     }
 
     pub const platform_label = switch (Environment.os) {
-        .mac => "darwin",
+        .mac, .ios => "darwin",
         .linux => "linux",
         .windows => "windows",
         .wasm => @compileError("Unsupported OS for Bun Upgrade"),
@@ -310,7 +310,7 @@ pub const UpgradeCommand = struct {
     const profile_exe_subpath = Version.profile_folder_name ++ std.fs.path.sep_str ++ "bun-profile" ++ exe_suffix;
 
     const manual_upgrade_command = switch (Environment.os) {
-        .linux, .mac => "curl -fsSL https://bun.com/install | bash",
+        .linux, .mac, .ios => "curl -fsSL https://bun.com/install | bash",
         .windows => "powershell -c 'irm bun.sh/install.ps1|iex'",
         else => "(TODO: Install script for " ++ Environment.os.displayString() ++ ")",
     };

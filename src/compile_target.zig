@@ -296,7 +296,7 @@ pub fn isSupported(this: *const CompileTarget) bool {
     return switch (this.os) {
         .windows => this.arch == .x64 or this.arch == .arm64,
 
-        .mac => true,
+        .mac, .ios => true,
         .linux => true,
 
         .wasm => false,

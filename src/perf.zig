@@ -1,7 +1,7 @@
 pub const Ctx = union(enum) {
     disabled: Disabled,
     enabled: switch (bun.Environment.os) {
-        .mac => Darwin,
+        .mac, .ios => Darwin,
         .linux => Linux,
         else => Disabled,
     },

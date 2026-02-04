@@ -35,7 +35,7 @@ pub const IteratorW = NewIterator(true);
 
 pub fn NewIterator(comptime use_windows_ospath: bool) type {
     return switch (bun.Environment.os) {
-        .mac => struct {
+        .mac, .ios => struct {
             dir: FD,
             seek: i64,
             buf: [8192]u8 align(@alignOf(std.posix.system.dirent)),
@@ -417,7 +417,7 @@ pub fn NewWrappedIterator(comptime path_type: PathType) type {
         pub fn init(dir: FD) Self {
             return Self{
                 .iter = switch (bun.Environment.os) {
-                    .mac,
+                    .mac, .ios,
                     => IteratorType{
                         .dir = dir,
                         .seek = 0,

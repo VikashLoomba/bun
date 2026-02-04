@@ -117,7 +117,7 @@ pub const windows = struct {
 pub const current = switch (bun.Environment.os) {
     .linux => linux,
     .windows => windows,
-    .mac => darwin,
+    .mac, .ios => darwin,
     else => struct {},
 };
 

@@ -606,7 +606,7 @@ pub const RunCommand = struct {
         // - bun.fs.FileSystem.RealFS.platformTempDir (any platform)
         .windows => @compileError("Do not use RunCommand.bun_node_dir on Windows"),
 
-        .mac => "/private/tmp",
+        .mac, .ios => "/private/tmp",
         else => "/tmp",
     } ++ if (!Environment.isDebug)
         "/bun-node" ++ if (Environment.git_sha_short.len > 0) "-" ++ Environment.git_sha_short else ""

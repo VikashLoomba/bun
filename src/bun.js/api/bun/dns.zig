@@ -2764,7 +2764,7 @@ pub const Resolver = struct {
             .libc => (if (Environment.isWindows) LibUVBackend else LibC)
                 .lookup(this, query, globalThis),
             .system => switch (comptime Environment.os) {
-                .mac => LibInfo.lookup(this, query, globalThis),
+                .mac, .ios => LibInfo.lookup(this, query, globalThis),
                 .windows => LibUVBackend.lookup(this, query, globalThis),
                 else => LibC.lookup(this, query, globalThis),
             },

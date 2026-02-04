@@ -13,7 +13,7 @@ const This = @This();
 const platform_defs = switch (Environment.os) {
     .windows => @import("./errno/windows_errno.zig"),
     .linux => @import("./errno/linux_errno.zig"),
-    .mac => @import("./errno/darwin_errno.zig"),
+    .mac, .ios => @import("./errno/darwin_errno.zig"),
     .wasm => {},
 };
 pub const workaround_symbols = @import("./workaround_missing_symbols.zig").current;
@@ -52,7 +52,7 @@ pub const syslog = log;
 pub const syscall = switch (Environment.os) {
     .linux => std.os.linux,
     // macOS requires using libc
-    .mac => std.c,
+    .mac, .ios => std.c,
     .windows, .wasm => @compileError("not implemented"),
 };
 
@@ -63,7 +63,7 @@ fn toPackedO(number: anytype) std.posix.O {
 pub const Mode = std.posix.mode_t;
 
 pub const O = switch (Environment.os) {
-    .mac => struct {
+    .mac, .ios => struct {
         pub const PATH = 0x0000;
         pub const RDONLY = 0x0000;
         pub const WRONLY = 0x0001;
@@ -696,7 +696,7 @@ pub fn mkdiratA(dir_fd: bun.FileDescriptor, file_path: []const u8) Maybe(void) {
 
 pub fn mkdiratZ(dir_fd: bun.FileDescriptor, file_path: [*:0]const u8, mode: mode_t) Maybe(void) {
     return switch (Environment.os) {
-        .mac => Maybe(void).errnoSysP(syscall.mkdirat(@intCast(dir_fd.cast()), file_path, mode), .mkdir, file_path) orelse .success,
+        .mac, .ios => Maybe(void).errnoSysP(syscall.mkdirat(@intCast(dir_fd.cast()), file_path, mode), .mkdir, file_path) orelse .success,
         .linux => Maybe(void).errnoSysP(linux.mkdirat(@intCast(dir_fd.cast()), file_path, mode), .mkdir, file_path) orelse .success,
         .windows, .wasm => @compileError("mkdir is not implemented on this platform"),
     };
@@ -769,7 +769,7 @@ pub fn lstatat(fd: bun.FileDescriptor, path: [:0]const u8) Maybe(bun.Stat) {
 
 pub fn mkdir(file_path: [:0]const u8, flags: mode_t) Maybe(void) {
     return switch (Environment.os) {
-        .mac => Maybe(void).errnoSysP(syscall.mkdir(file_path, flags), .mkdir, file_path) orelse .success,
+        .mac, .ios => Maybe(void).errnoSysP(syscall.mkdir(file_path, flags), .mkdir, file_path) orelse .success,
 
         .linux => Maybe(void).errnoSysP(syscall.mkdir(file_path, flags), .mkdir, file_path) orelse .success,
 
@@ -1682,7 +1682,7 @@ pub fn write(fd: bun.FileDescriptor, bytes: []const u8) Maybe(usize) {
     }
 
     return switch (Environment.os) {
-        .mac => {
+        .mac, .ios => {
             const rc = darwin_nocancel.@"write$NOCANCEL"(fd.cast(), bytes.ptr, adjusted_len);
             log("write({f}, {d}) = {d} ({f})", .{ fd, adjusted_len, rc, debug_timer });
 
@@ -1968,7 +1968,7 @@ pub fn read(fd: bun.FileDescriptor, buf: []u8) Maybe(usize) {
     const debug_timer = bun.Output.DebugTimer.start();
     const adjusted_len = @min(buf.len, max_count);
     return switch (Environment.os) {
-        .mac => {
+        .mac, .ios => {
             const rc = darwin_nocancel.@"read$NOCANCEL"(fd.cast(), buf.ptr, adjusted_len);
 
             if (Maybe(usize).errnoSysFd(rc, .read, fd)) |err| {
@@ -2044,7 +2044,7 @@ pub fn recvNonBlock(fd: bun.FileDescriptor, buf: []u8) Maybe(usize) {
 pub fn poll(fds: []std.posix.pollfd, timeout: i32) Maybe(usize) {
     while (true) {
         const rc = switch (Environment.os) {
-            .mac => darwin_nocancel.@"poll$NOCANCEL"(fds.ptr, fds.len, timeout),
+            .mac, .ios => darwin_nocancel.@"poll$NOCANCEL"(fds.ptr, fds.len, timeout),
             .linux => linux.poll(fds.ptr, fds.len, timeout),
             .wasm => @compileError("poll is not implemented on this platform"),
         };
@@ -2059,7 +2059,7 @@ pub fn poll(fds: []std.posix.pollfd, timeout: i32) Maybe(usize) {
 pub fn ppoll(fds: []std.posix.pollfd, timeout: ?*std.posix.timespec, sigmask: ?*const std.posix.sigset_t) Maybe(usize) {
     while (true) {
         const rc = switch (Environment.os) {
-            .mac => darwin_nocancel.@"ppoll$NOCANCEL"(fds.ptr, fds.len, timeout, sigmask),
+            .mac, .ios => darwin_nocancel.@"ppoll$NOCANCEL"(fds.ptr, fds.len, timeout, sigmask),
             .linux => linux.ppoll(fds.ptr, fds.len, timeout, sigmask),
             .wasm => @compileError("ppoll is not implemented on this platform"),
         };
@@ -2352,7 +2352,7 @@ pub fn renameat2(from_dir: bun.FileDescriptor, from: [:0]const u8, to_dir: bun.F
     while (true) {
         const rc = switch (comptime Environment.os) {
             .linux => std.os.linux.renameat2(@intCast(from_dir.cast()), from.ptr, @intCast(to_dir.cast()), to.ptr, flags.int()),
-            .mac => bun.c.renameatx_np(@intCast(from_dir.cast()), from.ptr, @intCast(to_dir.cast()), to.ptr, flags.int()),
+            .mac, .ios => bun.c.renameatx_np(@intCast(from_dir.cast()), from.ptr, @intCast(to_dir.cast()), to.ptr, flags.int()),
             .windows, .wasm => @compileError("renameat2() is not implemented on this platform"),
         };
 
@@ -2736,7 +2736,7 @@ pub fn getFdPath(fd: bun.FileDescriptor, out_buffer: *bun.PathBuffer) Maybe([]u8
             // Trust that Windows gives us valid UTF-16LE.
             return .{ .result = @constCast(bun.strings.fromWPath(out_buffer, wide_slice)) };
         },
-        .mac => {
+        .mac, .ios => {
             // On macOS, we can use F.GETPATH fcntl command to query the OS for
             // the path to the file descriptor.
             @memset(out_buffer[0..out_buffer.*.len], 0);
@@ -4280,7 +4280,7 @@ pub fn preallocate_file(fd: std.posix.fd_t, offset: std.posix.off_t, len: std.po
         .linux => {
             _ = std.os.linux.fallocate(fd, 0, @as(i64, @intCast(offset)), len);
         },
-        .mac => {
+        .mac, .ios => {
             // benchmarking this did nothing on macOS
             // i verified it wasn't returning -1
 

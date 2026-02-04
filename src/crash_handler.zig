@@ -321,7 +321,7 @@ pub fn crashHandler(
                                 writer.print("(thread {d})", .{bun.c.GetCurrentThreadId()}) catch std.posix.abort();
                             }
                         },
-                        .mac, .linux => {},
+                        .mac, .ios, .linux => {},
                         .wasm => @compileError("TODO"),
                     }
 
@@ -830,7 +830,7 @@ const metadata_version_line = std.fmt.comptimePrint(
 fn handleSegfaultPosix(sig: i32, info: *const std.posix.siginfo_t, _: ?*const anyopaque) callconv(.c) noreturn {
     const addr = switch (bun.Environment.os) {
         .linux => @intFromPtr(info.fields.sigfault.addr),
-        .mac => @intFromPtr(info.addr),
+        .mac, .ios => @intFromPtr(info.addr),
         .windows, .wasm => @compileError("unreachable"),
     };
 
@@ -892,7 +892,7 @@ pub fn init() void {
         .windows => {
             windows_segfault_handle = windows.kernel32.AddVectoredExceptionHandler(0, handleSegfaultWindows);
         },
-        .mac, .linux => {
+        .mac, .ios, .linux => {
             resetOnPosix();
         },
         .wasm => @compileError("TODO"),
@@ -1101,6 +1101,8 @@ const Platform = enum(u8) {
     mac_x86_64 = 'm',
     mac_aarch64 = 'M',
 
+    ios_aarch64 = 'I',
+
     windows_x86_64 = 'w',
     windows_x86_64_baseline = 'e',
     windows_aarch64 = 'W',
@@ -1156,7 +1158,7 @@ const StackLine = struct {
                     } else null,
                 };
             },
-            .mac => {
+            .mac, .ios => {
                 // This code is slightly modified from std.debug.DebugInfo.lookupModuleNameDyld
                 // https://github.com/ziglang/zig/blob/215de3ee67f75e2405c177b262cb5c1cd8c8e343/lib/std/debug.zig#L1783
                 const address = if (addr == 0) 0 else addr - 1;
@@ -1500,7 +1502,7 @@ fn report(url: []const u8) void {
             // we don't care what happens with the process
             _ = spawn_result;
         },
-        .mac, .linux => {
+        .mac, .ios, .linux => {
             var buf: bun.PathBuffer = undefined;
             var buf2: bun.PathBuffer = undefined;
             const curl = bun.which(
