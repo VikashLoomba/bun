@@ -115,11 +115,19 @@ if(UNIX)
       -g1 ${RELEASE}
     )
   else()
-    register_compiler_flags(
-      DESCRIPTION "Enable debug symbols (zstd-compressed)"
-      -g3 -gz=zstd ${DEBUG}
-      -g1 ${RELEASE}
-    )
+    if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+      register_compiler_flags(
+        DESCRIPTION "Enable debug symbols"
+        -g3 ${DEBUG}
+        -g1 ${RELEASE}
+      )
+    else()
+      register_compiler_flags(
+        DESCRIPTION "Enable debug symbols (zstd-compressed)"
+        -g3 -gz=zstd ${DEBUG}
+        -g1 ${RELEASE}
+      )
+    endif()
   endif()
 
   register_compiler_flags(

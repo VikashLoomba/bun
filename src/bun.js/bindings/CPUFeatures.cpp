@@ -69,7 +69,7 @@ static uint8_t x86_cpu_features()
 #if CPU(ARM64)
 
 #if OS(WINDOWS)
-#elif OS(MACOS)
+#elif OS(DARWIN)
 #include <sys/sysctl.h>
 #elif OS(LINUX)
 #include <sys/auxv.h>
@@ -82,7 +82,7 @@ static uint8_t aarch64_cpu_features()
 
 #if OS(WINDOWS)
 #pragma error "TODO: Implement AArch64 CPU features for Windows"
-#elif OS(MACOS)
+#elif OS(DARWIN)
     int value = 0;
     size_t size = sizeof(value);
     if (sysctlbyname("hw.optional.AdvSIMD", &value, &size, NULL, 0) == 0 && value == 1)
