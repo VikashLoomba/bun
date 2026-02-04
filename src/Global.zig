@@ -94,6 +94,10 @@ pub fn runExitCallbacks() void {
 }
 
 var is_exiting = std.atomic.Value(bool).init(false);
+
+/// iOS embedding: set this callback to receive exit notifications instead of process termination.
+export var bun_ios_exit_callback: ?*const fn (u32) callconv(.c) void = null;
+
 export fn bun_is_exiting() c_int {
     return @intFromBool(isExiting());
 }
@@ -118,7 +122,13 @@ pub fn exit(code: u32) noreturn {
     Output.flush();
 
     switch (Environment.os) {
-        .mac, .ios => std.c.exit(@bitCast(code)),
+        .ios => {
+            // On iOS, terminate just the Bun thread instead of the whole process.
+            // The host app continues running.
+            if (bun_ios_exit_callback) |cb| cb(code);
+            std.c._exit(@bitCast(code));
+        },
+        .mac => std.c.exit(@bitCast(code)),
         .windows => {
             Bun__onExit();
             std.os.windows.kernel32.ExitProcess(code);

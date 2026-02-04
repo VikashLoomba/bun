@@ -2063,8 +2063,18 @@ pub fn appendOptionsEnv(env: []const u8, comptime ArgType: type, args: *std.arra
     }
 }
 
+extern var bun_ios_argc: c_int;
+extern var bun_ios_argv: ?[*][*:0]u8;
+
 pub fn initArgv() !void {
-    if (comptime Environment.isPosix) {
+    if (comptime Environment.isIOS) {
+        const c_argc: usize = if (bun_ios_argv != null) @intCast(bun_ios_argc) else std.os.argv.len;
+        const c_argv = if (bun_ios_argv) |p| p else std.os.argv.ptr;
+        argv = try bun.default_allocator.alloc([:0]const u8, c_argc);
+        for (0..argv.len) |i| {
+            argv[i] = std.mem.sliceTo(c_argv[i], 0);
+        }
+    } else if (comptime Environment.isPosix) {
         argv = try bun.default_allocator.alloc([:0]const u8, std.os.argv.len);
         for (0..argv.len) |i| {
             argv[i] = std.mem.sliceTo(std.os.argv[i], 0);

@@ -701,6 +701,16 @@ if(NOT "${REVISION}" STREQUAL "")
   set(ZIG_FLAGS_BUN ${ZIG_FLAGS_BUN} -Dsha=${REVISION})
 endif()
 
+set(ZIG_ENVIRONMENT)
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  execute_process(
+    COMMAND xcrun --sdk iphonesimulator --show-sdk-path
+    OUTPUT_VARIABLE IOS_SDK_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(ZIG_ENVIRONMENT IOS_SYSROOT=${IOS_SDK_PATH})
+endif()
+
 register_command(
   TARGET
     bun-zig
@@ -732,6 +742,8 @@ register_command(
       --prominent-compile-errors
       --summary all
       ${ZIG_FLAGS_BUN}
+  ENVIRONMENT
+    ${ZIG_ENVIRONMENT}
   ARTIFACTS
     ${BUN_ZIG_OUTPUT}
   TARGETS
@@ -803,7 +815,8 @@ list(APPEND BUN_CPP_SOURCES
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-  list(APPEND BUN_CPP_SOURCES ${CWD}/src/ios_stubs.c ${CWD}/src/ios_webkit_stubs.cpp)
+  list(APPEND BUN_CPP_SOURCES ${CWD}/src/ios_stubs.c ${CWD}/src/ios_webkit_stubs.cpp ${CWD}/src/ios_api.c)
+  set_source_files_properties(${CWD}/src/ios_api.c PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
   set_source_files_properties(${CWD}/src/ios_webkit_stubs.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 endif()
 

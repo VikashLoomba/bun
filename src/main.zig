@@ -14,7 +14,7 @@ extern fn bun_warn_avx_missing(url: [*:0]const u8) void;
 pub extern "c" var _environ: ?*anyopaque;
 pub extern "c" var environ: ?*anyopaque;
 
-pub fn main() void {
+fn bunMain() void {
     _bun.crash_handler.init();
 
     if (Environment.isPosix) {
@@ -31,8 +31,6 @@ pub fn main() void {
         _bun.debug_allocator_data.backing = .init;
     }
 
-    // This should appear before we make any calls at all to libuv.
-    // So it's safest to put it very early in the main function.
     if (Environment.isWindows) {
         _ = _bun.windows.libuv.uv_replace_allocator(
             &_bun.mimalloc.mi_malloc,
@@ -60,6 +58,14 @@ pub fn main() void {
 
     _bun.cli.Cli.start(_bun.default_allocator);
     _bun.Global.exit(0);
+}
+
+pub fn main() void {
+    bunMain();
+}
+
+export fn bun_main() void {
+    bunMain();
 }
 
 pub export fn Bun__panic(msg: [*]const u8, len: usize) noreturn {
