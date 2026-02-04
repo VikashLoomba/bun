@@ -24,11 +24,6 @@ bool _ZN3WTF14AtomStringImpl19isInAtomStringTableEPNS_10StringImplE(void*) { ret
 
 
 
-// === bmalloc stubs ===
-
-struct BmallocMemoryStatus { double a; double b; };
-BmallocMemoryStatus _ZN7bmalloc12memoryStatusEv() { return { 0.5, 0 }; }
-
 // === JSC debug assertion stubs ===
 
 // JSC::AssertNoGC::s_scopeReentryCount
@@ -139,5 +134,10 @@ const void* _ZNK3JSC24JSGlobalObjectDebuggable4nameEv(void*) { return "BunGlobal
 void _ZN3JSC24JSGlobalObjectDebuggable7connectERN9Inspector15FrontendChannelEbb(void*, void*, bool, bool) {}
 void _ZN3JSC24JSGlobalObjectDebuggable10disconnectERN9Inspector15FrontendChannelE(void*, void*) {}
 void _ZN3JSC24JSGlobalObjectDebuggable25dispatchMessageFromRemoteEON3WTF6StringE(void*, void*) {}
+
+// WTFTimer__fire: called from Bun's Zig Timer.zig to fire a WTF::RunLoop::TimerBase.
+// RunLoopBun.cpp (which defines this properly) is not compiled in JSCOnly port.
+// TODO: compile RunLoopBun.cpp into libWTF.a to get proper timer support.
+void WTFTimer__fire(void* timer) { (void)timer; }
 
 } // extern "C"
