@@ -213,8 +213,8 @@ optionx(USE_WEBKIT_ICU BOOL "Use the ICU libraries from WebKit" DEFAULT ${DEFAUL
 optionx(ERROR_LIMIT STRING "Maximum number of errors to show when compiling C++ code" DEFAULT "100")
 
 # TinyCC is used for FFI JIT compilation
-# Disable on Windows ARM64 where it's not yet supported
-if(WIN32 AND ARCH STREQUAL "aarch64")
+# Disable on Windows ARM64 (not supported) and iOS (no JIT)
+if((WIN32 AND ARCH STREQUAL "aarch64") OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
   set(DEFAULT_ENABLE_TINYCC OFF)
 else()
   set(DEFAULT_ENABLE_TINYCC ON)
