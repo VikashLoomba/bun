@@ -1132,7 +1132,7 @@ fn fetchImpl(
                         .err => break :use_sendfile,
                     };
 
-                    if (Environment.isMac) {
+                    if (Environment.isDarwin) {
                         // macOS only supports regular files for sendfile()
                         if (!bun.isRegularFile(stat.mode)) {
                             break :use_sendfile;

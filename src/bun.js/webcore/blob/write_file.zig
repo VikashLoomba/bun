@@ -281,7 +281,7 @@ pub const WriteFile = struct {
     fn doWriteLoopTask(task: *jsc.WorkPoolTask) void {
         var this: *WriteFile = @fieldParentPtr("task", task);
         // On macOS, we use one-shot mode, so we don't need to unregister.
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             this.close_after_io = false;
         }
         this.doWriteLoop();

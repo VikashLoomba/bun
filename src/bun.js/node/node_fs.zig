@@ -801,7 +801,7 @@ pub fn NewAsyncCpTask(comptime is_shell: bool) type {
             const src = src_buf[0..src_dir_len :0];
             const dest = dest_buf[0..dest_dir_len :0];
 
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (Maybe(Return.Cp).errnoSysP(c.clonefile(src, dest, 0), .clonefile, src)) |err| {
                     switch (err.getErrno()) {
                         .ACCES,
@@ -3520,7 +3520,7 @@ pub const NodeFS = struct {
         const ret = Maybe(Return.CopyFile);
 
         // TODO: do we need to fchown?
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             var src_buf: bun.PathBuffer = undefined;
             var dest_buf: bun.PathBuffer = undefined;
 
@@ -6132,7 +6132,7 @@ pub const NodeFS = struct {
             } };
         }
 
-        if (comptime Environment.isMac) try_with_clonefile: {
+        if (comptime Environment.isDarwin) try_with_clonefile: {
             if (Maybe(Return.Cp).errnoSysP(c.clonefile(src, dest, 0), .clonefile, src)) |err| {
                 switch (err.getErrno()) {
                     .NAMETOOLONG, .ROFS, .INVAL, .ACCES, .PERM => |errno| {
@@ -6275,7 +6275,7 @@ pub const NodeFS = struct {
         const ret = Maybe(Return.CopyFile);
 
         // TODO: do we need to fchown?
-        if (Environment.isMac) {
+        if (Environment.isDarwin) {
             if (mode.isForceClone()) {
                 // https://www.manpagez.com/man/2/clonefile/
                 return ret.errnoSysP(c.clonefile(src, dest, 0), .clonefile, src) orelse ret.success;

@@ -128,7 +128,7 @@ pub const ThreadPool = struct {
             return false;
         }
 
-        if (Environment.isMac or Environment.isWindows) {
+        if (Environment.isDarwin or Environment.isWindows) {
             // 4 was the sweet spot on macOS. Didn't check the sweet spot on Windows.
             return bun.getThreadCount() > 3;
         }

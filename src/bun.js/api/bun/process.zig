@@ -272,7 +272,7 @@ pub const Process = struct {
             switch (this.rewatchPosix()) {
                 .result => {},
                 .err => |err_| {
-                    if (comptime Environment.isMac) {
+                    if (comptime Environment.isDarwin) {
                         if (err_.getErrno() == .SRCH) {
                             break :brk Status.from(pid, &PosixSpawn.wait4(
                                 pid,
@@ -1250,7 +1250,7 @@ pub fn spawnProcessPosix(
 
     var flags: i32 = bun.c.POSIX_SPAWN_SETSIGDEF | bun.c.POSIX_SPAWN_SETSIGMASK;
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         flags |= bun.c.POSIX_SPAWN_CLOEXEC_DEFAULT;
 
         if (options.use_execve_on_macos) {
@@ -1384,7 +1384,7 @@ pub fn spawnProcessPosix(
                     // our copy of stdin should be writable
                     _ = std.c.shutdown(@intCast(fds[0].cast()), std.posix.SHUT.RD);
 
-                    if (comptime Environment.isMac) {
+                    if (comptime Environment.isDarwin) {
                         // macOS seems to default to around 8 KB for the buffer size
                         // this is comically small.
                         // TODO: investigate if this should be adjusted on Linux.
@@ -1401,7 +1401,7 @@ pub fn spawnProcessPosix(
                     // our copy of stdout or stderr should be readable
                     _ = std.c.shutdown(@intCast(fds[0].cast()), std.posix.SHUT.WR);
 
-                    if (comptime Environment.isMac) {
+                    if (comptime Environment.isDarwin) {
                         // macOS seems to default to around 8 KB for the buffer size
                         // this is comically small.
                         // TODO: investigate if this should be adjusted on Linux.

@@ -388,7 +388,7 @@ fn appendFileAssumeCapacity(
         .kind = .file,
     };
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         this.addFileDescriptorToKQueueWithoutChecks(fd, watchlist_id);
     } else if (comptime Environment.isLinux) {
         // var file_path_to_use_ = std.mem.trimRight(u8, file_path_, "/");
@@ -450,7 +450,7 @@ fn appendDirectoryAssumeCapacity(
         .package_json = null,
     };
 
-    if (Environment.isMac) {
+    if (Environment.isDarwin) {
         const KEvent = std.c.Kevent;
 
         // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kqueue.2.html
@@ -654,7 +654,7 @@ pub fn addFileByPathSlow(
 
     // Only open fd if we might need it
     var fd: bun.FileDescriptor = bun.invalid_fd;
-    if (Environment.isMac) {
+    if (Environment.isDarwin) {
         const path_z = std.posix.toPosixPath(file_path) catch return false;
         switch (bun.sys.open(&path_z, bun.c.O_EVTONLY, 0)) {
             .result => |opened| fd = opened,
@@ -667,7 +667,7 @@ pub fn addFileByPathSlow(
         .result => {
             // On macOS, addFile may have found the file already watched (race)
             // and returned success without using our fd. Close it if unused.
-            if ((comptime Environment.isMac) and fd.isValid()) {
+            if ((comptime Environment.isDarwin) and fd.isValid()) {
                 this.mutex.lock();
                 const maybe_idx = this.indexOf(hash);
                 const stored_fd = if (maybe_idx) |idx|

@@ -65,7 +65,7 @@ extern "kernel32" fn SetThreadDescription(thread: std.os.windows.HANDLE, name: [
 pub fn setThreadName(name: [:0]const u8) void {
     if (Environment.isLinux) {
         _ = std.posix.prctl(.SET_NAME, .{@intFromPtr(name.ptr)}) catch 0;
-    } else if (Environment.isMac) {
+    } else if (Environment.isDarwin) {
         _ = std.c.pthread_setname_np(name);
     } else if (Environment.isWindows) {
         // TODO: use SetThreadDescription or NtSetInformationThread with 0x26 (ThreadNameInformation)

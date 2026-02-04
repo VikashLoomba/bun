@@ -3,7 +3,7 @@ const Error = @This();
 
 const retry_errno = if (Environment.isLinux)
     @as(Int, @intCast(@intFromEnum(E.AGAIN)))
-else if (Environment.isMac)
+else if (Environment.isDarwin)
     @as(Int, @intCast(@intFromEnum(E.AGAIN)))
 else
     @as(Int, @intCast(@intFromEnum(E.INTR)));

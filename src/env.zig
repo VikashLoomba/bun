@@ -10,7 +10,9 @@ pub const build_target: BuildTarget = brk: {
 pub const isWasm = build_target == .wasm;
 pub const isNative = build_target == .native;
 pub const isWasi = build_target == .wasi;
+pub const isIOS = build_target == .native and builtin.target.os.tag == .ios;
 pub const isMac = build_target == .native and builtin.target.os.tag == .macos;
+pub const isDarwin = isMac or isIOS;
 pub const isBrowser = !isWasi and isWasm;
 pub const isWindows = builtin.target.os.tag == .windows;
 pub const isPosix = !isWindows and !isWasm;
@@ -67,6 +69,7 @@ pub inline fn onlyMac() void {
 
 pub const OperatingSystem = enum {
     mac,
+    ios,
     linux,
     windows,
     // wAsM is nOt aN oPeRaTiNg SyStEm
@@ -83,6 +86,8 @@ pub const OperatingSystem = enum {
         .{ "macOS", .mac },
         .{ "mac", .mac },
         .{ "apple", .mac },
+        .{ "ios", .ios },
+        .{ "iOS", .ios },
         .{ "linux", .linux },
         .{ "Linux", .linux },
         .{ "linux-gnu", .linux },
@@ -90,10 +95,15 @@ pub const OperatingSystem = enum {
         .{ "wasm", .wasm },
     });
 
+    pub fn isDarwin(self: OperatingSystem) bool {
+        return self == .mac or self == .ios;
+    }
+
     /// user-facing name with capitalization
     pub fn displayString(self: OperatingSystem) []const u8 {
         return switch (self) {
             .mac => "macOS",
+            .ios => "iOS",
             .linux => "Linux",
             .windows => "Windows",
             .wasm => "WASM",
@@ -103,7 +113,7 @@ pub const OperatingSystem = enum {
     /// same format as `process.platform`
     pub fn nameString(self: OperatingSystem) []const u8 {
         return switch (self) {
-            .mac => "darwin",
+            .mac, .ios => "darwin",
             .linux => "linux",
             .windows => "win32",
             .wasm => "wasm",
@@ -113,6 +123,7 @@ pub const OperatingSystem = enum {
     pub fn stdOSTag(self: OperatingSystem) std.Target.Os.Tag {
         return switch (self) {
             .mac => .macos,
+            .ios => .ios,
             .linux => .linux,
             .windows => .windows,
             .wasm => unreachable,
@@ -123,6 +134,7 @@ pub const OperatingSystem = enum {
     pub fn npmName(self: OperatingSystem) []const u8 {
         return switch (self) {
             .mac => "darwin",
+            .ios => "ios",
             .linux => "linux",
             .windows => "windows",
             .wasm => "wasm",
@@ -130,7 +142,9 @@ pub const OperatingSystem = enum {
     }
 };
 
-pub const os: OperatingSystem = if (isMac)
+pub const os: OperatingSystem = if (isIOS)
+    .ios
+else if (isMac)
     .mac
 else if (isLinux)
     .linux

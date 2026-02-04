@@ -245,7 +245,7 @@ pub const InstallCompletionsCommand = struct {
                     }
 
                     outer: {
-                        if (Environment.isMac) {
+                        if (Environment.isDarwin) {
                             if (!Environment.isAarch64) {
                                 // homebrew fish
                                 completions_dir = "/usr/local/share/fish/completions";

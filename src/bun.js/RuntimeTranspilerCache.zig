@@ -451,7 +451,7 @@ pub const RuntimeTranspilerCache = struct {
             return bun.fs.FileSystem.instance.absBufZ(parts, buf);
         }
 
-        if (comptime bun.Environment.isMac) {
+        if (comptime bun.Environment.isDarwin) {
             // On a mac, default to ~/Library/Caches/bun/*
             // This is different than ~/.bun/install/cache, and not configurable by the user.
             if (bun.env_var.HOME.get()) |home| {

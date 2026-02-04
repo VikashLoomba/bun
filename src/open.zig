@@ -184,7 +184,7 @@ pub const Editor = enum(u8) {
     pub const bin_path: StringArrayMap = brk: {
         var map = StringArrayMap{};
 
-        if (Environment.isMac) {
+        if (Environment.isDarwin) {
             map.put(.vscode, &.{
                 "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code",
                 "/Applications/VSCodium.app/Contents/Resources/app/bin/code",
@@ -240,7 +240,7 @@ pub const Editor = enum(u8) {
             args_buf[i] = binary;
             i += 1;
 
-            if (Environment.isMac) {
+            if (Environment.isDarwin) {
                 args_buf[i] = "--args";
                 i += 1;
             }

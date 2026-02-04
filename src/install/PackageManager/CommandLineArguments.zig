@@ -13,7 +13,7 @@
 const CommandLineArguments = @This();
 
 const ParamType = clap.Param(clap.Help);
-const platform_specific_backend_label = if (Environment.isMac)
+const platform_specific_backend_label = if (Environment.isDarwin)
     "Possible values: \"clonefile\" (default), \"hardlink\", \"symlink\", \"copyfile\""
 else
     "Possible values: \"hardlink\" (default), \"symlink\", \"copyfile\"";

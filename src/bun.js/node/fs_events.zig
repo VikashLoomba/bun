@@ -606,7 +606,7 @@ pub fn watch(path: string, recursive: bool, callback: FSEventsWatcher.Callback, 
 }
 
 pub fn closeAndWait() void {
-    if (!bun.Environment.isMac) {
+    if (!bun.Environment.isDarwin) {
         return;
     }
 

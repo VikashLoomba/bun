@@ -501,7 +501,7 @@ fn dlsym(comptime Type: type, comptime symbol: [:0]const u8) ?Type {
 
     get: {
         if (Handle.handle == null) {
-            const paths_to_try = if (bun.Environment.isMac) .{
+            const paths_to_try = if (bun.Environment.isDarwin) .{
                 "/usr/local/opt/tracy/lib/libtracy.dylib",
                 "/usr/local/lib/libtracy.dylib",
                 "/opt/homebrew/lib/libtracy.so",
@@ -526,7 +526,7 @@ fn dlsym(comptime Type: type, comptime symbol: [:0]const u8) ?Type {
                 "tracy.dll",
             } else .{};
 
-            const RLTD: std.c.RTLD = if (bun.Environment.isMac) @bitCast(@as(i32, -2)) else if (bun.Environment.isLinux) .{} else {};
+            const RLTD: std.c.RTLD = if (bun.Environment.isDarwin) @bitCast(@as(i32, -2)) else if (bun.Environment.isLinux) .{} else {};
 
             if (bun.env_var.BUN_TRACY_PATH.get()) |path| {
                 const handle = bun.sys.dlopen(&(std.posix.toPosixPath(path) catch unreachable), RLTD);

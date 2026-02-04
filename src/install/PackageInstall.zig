@@ -90,7 +90,7 @@ pub const PackageInstall = struct {
         });
 
         pub inline fn isSupported(this: Method) bool {
-            if (comptime Environment.isMac) return macOS.get(this);
+            if (comptime Environment.isDarwin) return macOS.get(this);
             if (comptime Environment.isLinux) return linux.get(this);
             if (comptime Environment.isWindows) return windows.get(this);
 
@@ -369,7 +369,7 @@ pub const PackageInstall = struct {
         }
     };
 
-    pub var supported_method: Method = if (Environment.isMac)
+    pub var supported_method: Method = if (Environment.isDarwin)
         Method.clonefile
     else
         Method.hardlink;
@@ -444,7 +444,7 @@ pub const PackageInstall = struct {
 
     // https://www.unix.com/man-page/mojave/2/fclonefileat/
     fn installWithClonefile(this: *@This(), destination_dir: std.fs.Dir) !Result {
-        if (comptime !Environment.isMac) @compileError("clonefileat() is macOS only.");
+        if (comptime !Environment.isDarwin) @compileError("clonefileat() is macOS only.");
 
         if (this.destination_dir_subpath[0] == '@') {
             if (strings.indexOfCharZ(this.destination_dir_subpath, std.fs.path.sep)) |slash| {
@@ -1395,7 +1395,7 @@ pub const PackageInstall = struct {
 
         switch (supported_method_to_use) {
             .clonefile => {
-                if (comptime Environment.isMac) {
+                if (comptime Environment.isDarwin) {
 
                     // First, attempt to use clonefile
                     // if that fails due to ENOTSUP, mark it as unsupported and then fall back to copyfile
@@ -1414,7 +1414,7 @@ pub const PackageInstall = struct {
                 }
             },
             .clonefile_each_dir => {
-                if (comptime Environment.isMac) {
+                if (comptime Environment.isDarwin) {
                     if (this.installWithClonefileEachDir(destination_dir)) |result| {
                         return result;
                     } else |err| {

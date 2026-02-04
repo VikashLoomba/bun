@@ -942,7 +942,7 @@ pub fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, 
                 },
             };
 
-            if (Environment.isMac) {
+            if (Environment.isDarwin) {
                 if (!bun.isRegularFile(stat.mode)) {
                     if (auto_close) {
                         fd.close();

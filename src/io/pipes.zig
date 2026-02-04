@@ -41,7 +41,7 @@ pub const PollOrFd = union(enum) {
             // 7) ON ANOTHER THREAD: close(3) = 0,
             // 8) kevent(2, EVFILT_READ, EV_ADD | EV_ENABLE | EV_DISPATCH, 0, 0, 0) = 0
             // 9) ??? No more events for fd 2
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (this.poll.flags.contains(.poll_writable) and this.poll.flags.contains(.nonblocking)) {
                     close_async = false;
                 }

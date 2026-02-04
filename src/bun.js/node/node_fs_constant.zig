@@ -31,7 +31,7 @@ pub const Copyfile = enum(i32) {
 
     pub inline fn canUseClone(this: Copyfile) bool {
         _ = this;
-        return Environment.isMac;
+        return Environment.isDarwin;
         // return (@intFromEnum(this) | COPYFILE_FICLONE) != 0;
     }
 };

@@ -1547,7 +1547,7 @@ pub fn reloadProcess(
     const envp = @as([*:null]?[*:0]const u8, @ptrCast(environ.ptr));
 
     // macOS doesn't have CLOEXEC, so we must go through posix_spawn
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         var actions = spawn.Actions.init() catch unreachable;
         actions.inherit(.stdin()) catch unreachable;
         actions.inherit(.stdout()) catch unreachable;
@@ -3079,7 +3079,7 @@ pub fn getRoughTickCount(comptime mock_mode: timespec.MockMode) timespec {
         }
     }
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         // https://opensource.apple.com/source/xnu/xnu-2782.30.5/libsyscall/wrappers/mach_approximate_time.c.auto.html
         // https://opensource.apple.com/source/Libc/Libc-1158.1.2/gen/clock_gettime.c.auto.html
         var spec = timespec{
@@ -3707,7 +3707,7 @@ pub const pe = @import("./pe.zig");
 pub const valkey = @import("./valkey/index.zig");
 pub const highway = @import("./highway.zig");
 
-pub const mach_port = if (Environment.isMac) std.c.mach_port_t else u32;
+pub const mach_port = if (Environment.isDarwin) std.c.mach_port_t else u32;
 
 /// Automatically generated C++ bindings for functions marked with `[[ZIG_EXPORT(...)]]`
 pub const cpp = @import("cpp");

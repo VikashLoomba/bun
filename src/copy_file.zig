@@ -54,7 +54,7 @@ pub const CopyFileState = if (Environment.isLinux) LinuxCopyFileState else Empty
 const CopyFileReturnType = bun.sys.Maybe(void);
 
 pub fn copyFileWithState(in: InputType, out: InputType, copy_file_state: *CopyFileState) CopyFileReturnType {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = posix.system.fcopyfile(in.native(), out.native(), null, posix.system.COPYFILE{ .DATA = true });
 
         switch (posix.errno(rc)) {

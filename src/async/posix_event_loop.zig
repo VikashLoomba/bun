@@ -113,7 +113,7 @@ pub const KeepAlive = struct {
     }
 };
 
-const KQueueGenerationNumber = if (Environment.isMac and Environment.allow_assert) usize else u0;
+const KQueueGenerationNumber = if (Environment.isDarwin and Environment.allow_assert) usize else u0;
 pub const FilePoll = struct {
     var max_generation_number: KQueueGenerationNumber = 0;
 
@@ -321,7 +321,7 @@ pub const FilePoll = struct {
         return this.flags.contains(.poll_writable) or this.flags.contains(.poll_readable) or this.flags.contains(.poll_process) or this.flags.contains(.poll_machport);
     }
 
-    const kqueue_or_epoll = if (Environment.isMac) "kevent" else "epoll";
+    const kqueue_or_epoll = if (Environment.isDarwin) "kevent" else "epoll";
 
     pub fn onUpdate(poll: *FilePoll, size_or_offset: i64) void {
         if (poll.flags.contains(.one_shot) and !poll.flags.contains(.needs_rearm)) {
@@ -397,7 +397,7 @@ pub const FilePoll = struct {
             },
 
             @field(Owner.Tag, @typeName(GetAddrInfoRequest)) => {
-                if (comptime !Environment.isMac) {
+                if (comptime !Environment.isDarwin) {
                     unreachable;
                 }
 
@@ -407,7 +407,7 @@ pub const FilePoll = struct {
             },
 
             @field(Owner.Tag, @typeName(Request)) => {
-                if (comptime !Environment.isMac) {
+                if (comptime !Environment.isDarwin) {
                     unreachable;
                 }
 
@@ -774,7 +774,7 @@ pub const FilePoll = struct {
             return;
         }
 
-        if (comptime Environment.isMac)
+        if (comptime Environment.isDarwin)
             onKQueueEvent(file_poll, loop, &loop.ready_polls[@as(usize, @intCast(loop.current_ready_poll))])
         else if (comptime Environment.isLinux)
             onEpollEvent(file_poll, loop, &loop.ready_polls[@as(usize, @intCast(loop.current_ready_poll))]);
@@ -835,7 +835,7 @@ pub const FilePoll = struct {
                 this.deactivate(loop);
                 return errno;
             }
-        } else if (comptime Environment.isMac) {
+        } else if (comptime Environment.isDarwin) {
             var changelist = std.mem.zeroes([2]std.posix.system.kevent64_s);
             const one_shot_flag: u16 = if (!this.flags.contains(.one_shot))
                 0
@@ -1003,7 +1003,7 @@ pub const FilePoll = struct {
             if (bun.sys.Maybe(void).errnoSys(ctl, .epoll_ctl)) |errno| {
                 return errno;
             }
-        } else if (comptime Environment.isMac) {
+        } else if (comptime Environment.isDarwin) {
             var changelist = std.mem.zeroes([2]std.posix.system.kevent64_s);
 
             changelist[0] = switch (flag) {

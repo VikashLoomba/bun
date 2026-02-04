@@ -777,7 +777,7 @@ pub fn transpileSourceCode(
                             true,
                         )) {
                             .err => {
-                                if (comptime Environment.isMac) {
+                                if (comptime Environment.isDarwin) {
                                     // If any error occurs and we just
                                     // opened the file descriptor to
                                     // receive event notifications on

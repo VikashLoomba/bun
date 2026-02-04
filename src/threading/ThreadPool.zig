@@ -312,7 +312,7 @@ inline fn notify(self: *ThreadPool, is_waking: bool) void {
 pub const default_thread_stack_size = brk: {
     // 4mb
     const default = 4 * 1024 * 1024;
-    if (!Environment.isMac) break :brk default;
+    if (!Environment.isDarwin) break :brk default;
 
     const size = default - (default % std.heap.page_size_max);
     // stack size must be a multiple of page_size

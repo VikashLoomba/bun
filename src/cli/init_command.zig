@@ -1072,7 +1072,7 @@ const Template = enum {
             return true;
         }
 
-        if (Environment.isMac) {
+        if (Environment.isDarwin) {
             if (bun.sys.exists("/Applications/Cursor.app")) {
                 return true;
             }

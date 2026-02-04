@@ -376,7 +376,7 @@ const LibUtil = struct {
 
 fn getOpenPtyFn() ?OpenPtyFn {
     // On macOS, openpty is in libc, so we can use it directly
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const c = struct {
             extern "c" fn openpty(
                 amaster: *c_int,
@@ -652,7 +652,7 @@ pub fn resize(
 
     if (comptime Environment.isPosix) {
         const ioctl_c = struct {
-            const TIOCSWINSZ: c_ulong = if (Environment.isMac) 0x80087467 else 0x5414;
+            const TIOCSWINSZ: c_ulong = if (Environment.isDarwin) 0x80087467 else 0x5414;
 
             const Winsize = extern struct {
                 ws_row: u16,

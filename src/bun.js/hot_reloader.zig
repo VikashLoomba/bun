@@ -364,7 +364,7 @@ pub fn NewHotReloader(comptime Ctx: type, comptime EventLoopType: type, comptime
 
                 switch (kind) {
                     .file => {
-                        if (event.op.delete or (event.op.rename and Environment.isMac)) {
+                        if (event.op.delete or (event.op.rename and Environment.isDarwin)) {
                             ctx.removeAtIndex(
                                 event.index,
                                 0,
@@ -377,7 +377,7 @@ pub fn NewHotReloader(comptime Ctx: type, comptime EventLoopType: type, comptime
                             debug("File changed: {s}", .{fs.relativeTo(file_path)});
 
                         if (event.op.write or event.op.delete or event.op.rename) {
-                            if (comptime Environment.isMac) {
+                            if (comptime Environment.isDarwin) {
                                 if (event.op.rename) {
                                     // Special case for entrypoint: defer reload until we get
                                     // a directory write event confirming the file exists.
@@ -410,7 +410,7 @@ pub fn NewHotReloader(comptime Ctx: type, comptime EventLoopType: type, comptime
                         var entries_option: ?*Fs.FileSystem.RealFS.EntriesOption = null;
 
                         const affected = brk: {
-                            if (comptime Environment.isMac) {
+                            if (comptime Environment.isDarwin) {
                                 if (rfs.entries.get(file_path)) |existing| {
                                     this.putTombstone(file_path, existing);
                                     entries_option = existing;
@@ -457,7 +457,7 @@ pub fn NewHotReloader(comptime Ctx: type, comptime EventLoopType: type, comptime
                             break :brk event.names(changed_files);
                         };
 
-                        if (affected.len > 0 and !Environment.isMac) {
+                        if (affected.len > 0 and !Environment.isDarwin) {
                             if (rfs.entries.get(file_path)) |existing| {
                                 this.putTombstone(file_path, existing);
                                 entries_option = existing;
@@ -472,7 +472,7 @@ pub fn NewHotReloader(comptime Ctx: type, comptime EventLoopType: type, comptime
                             var last_file_hash: Watcher.HashType = std.math.maxInt(Watcher.HashType);
 
                             for (affected) |changed_name_| {
-                                const changed_name: []const u8 = if (comptime Environment.isMac)
+                                const changed_name: []const u8 = if (comptime Environment.isDarwin)
                                     changed_name_
                                 else
                                     bun.asByteSlice(changed_name_.?);

@@ -133,7 +133,7 @@ pub const ReadFile = struct {
         // On macOS, we use one-shot mode, so:
         // - we don't need to unregister
         // - we don't need to delete from kqueue
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             // unless pending IO has been scheduled in-between.
             this.close_after_io = this.io_request.scheduled;
         }
@@ -149,7 +149,7 @@ pub const ReadFile = struct {
         // On macOS, we use one-shot mode, so:
         // - we don't need to unregister
         // - we don't need to delete from kqueue
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             // unless pending IO has been scheduled in-between.
             this.close_after_io = this.io_request.scheduled;
         }

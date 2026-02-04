@@ -165,7 +165,7 @@ pub fn __start(this: *IOWriter) Maybe(void) {
             this.writer.getPoll().?.flags.insert(.nonblocking);
         }
 
-        const sendto_MSG_NOWAIT_blocks = bun.Environment.isMac;
+        const sendto_MSG_NOWAIT_blocks = bun.Environment.isDarwin;
 
         if (this.flags.is_socket and (!sendto_MSG_NOWAIT_blocks or this.flags.nonblocking)) {
             this.writer.getPoll().?.flags.insert(.socket);

@@ -514,7 +514,7 @@ pub fn statfs(path: [:0]const u8) Maybe(bun.StatFS) {
         var statfs_ = mem.zeroes(bun.StatFS);
         const rc = if (Environment.isLinux)
             c.statfs(path, &statfs_)
-        else if (Environment.isMac)
+        else if (Environment.isDarwin)
             c.statfs(path, &statfs_)
         else
             @compileError("Unsupported platform");
@@ -788,7 +788,7 @@ pub fn mkdir(file_path: [:0]const u8, flags: mode_t) Maybe(void) {
 }
 
 pub fn mkdirA(file_path: []const u8, flags: mode_t) Maybe(void) {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         return Maybe(void).errnoSysP(syscall.mkdir(&(std.posix.toPosixPath(file_path) catch return Maybe(void){
             .err = .{
                 .errno = @intFromEnum(E.NOMEM),
@@ -1547,7 +1547,7 @@ pub fn openatWindowsA(
 }
 
 pub fn openatOSPath(dirfd: bun.FileDescriptor, file_path: bun.OSPathSliceZ, flags: i32, perm: bun.Mode) Maybe(bun.FileDescriptor) {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         // https://opensource.apple.com/source/xnu/xnu-7195.81.3/libsyscall/wrappers/open-base.c
         const rc = darwin_nocancel.@"openat$NOCANCEL"(dirfd.cast(), file_path.ptr, @bitCast(bun.O.toPacked(flags)), perm);
         if (comptime Environment.allow_assert)
@@ -1754,7 +1754,7 @@ fn veclen(buffers: anytype) usize {
 }
 
 pub fn writev(fd: bun.FileDescriptor, buffers: []std.posix.iovec) Maybe(usize) {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = writev_sym(fd.cast(), @as([*]std.posix.iovec_const, @ptrCast(buffers.ptr)), @as(i32, @intCast(buffers.len)));
         if (comptime Environment.allow_assert)
             log("writev({f}, {d}) = {d}", .{ fd, veclen(buffers), rc });
@@ -1785,7 +1785,7 @@ pub fn pwritev(fd: bun.FileDescriptor, buffers: []const bun.PlatformIOVecConst, 
     if (comptime Environment.isWindows) {
         return sys_uv.pwritev(fd, buffers, position);
     }
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = pwritev_sym(fd.cast(), buffers.ptr, @as(i32, @intCast(buffers.len)), position);
         if (comptime Environment.allow_assert)
             log("pwritev({f}, {d}) = {d}", .{ fd, veclen(buffers), rc });
@@ -1819,7 +1819,7 @@ pub fn readv(fd: bun.FileDescriptor, buffers: []std.posix.iovec) Maybe(usize) {
         }
     }
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = readv_sym(fd.cast(), buffers.ptr, @as(i32, @intCast(buffers.len)));
         if (comptime Environment.allow_assert)
             log("readv({f}, {d}) = {d}", .{ fd, veclen(buffers), rc });
@@ -1853,7 +1853,7 @@ pub fn preadv(fd: bun.FileDescriptor, buffers: []std.posix.iovec, position: isiz
         }
     }
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = preadv_sym(fd.cast(), buffers.ptr, @as(i32, @intCast(buffers.len)), position);
         if (comptime Environment.allow_assert)
             log("preadv({f}, {d}) = {d}", .{ fd, veclen(buffers), rc });
@@ -2080,7 +2080,7 @@ pub fn recv(fd: bun.FileDescriptor, buf: []u8, flag: u32) Maybe(usize) {
         }
     }
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const rc = darwin_nocancel.@"recvfrom$NOCANCEL"(fd.cast(), buf.ptr, adjusted_len, flag, null, null);
 
         if (Maybe(usize).errnoSysFd(rc, .recv, fd)) |err| {
@@ -2123,7 +2123,7 @@ pub fn sendNonBlock(fd: bun.FileDescriptor, buf: []const u8) Maybe(usize) {
 }
 
 pub fn send(fd: bun.FileDescriptor, buf: []const u8, flag: u32) Maybe(usize) {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         const debug_timer = bun.Output.DebugTimer.start();
         const rc = darwin_nocancel.@"sendto$NOCANCEL"(fd.cast(), buf.ptr, buf.len, flag, null, 0);
 
@@ -2254,7 +2254,7 @@ pub const RenameAt2Flags = packed struct {
     pub fn int(self: RenameAt2Flags) u32 {
         var flags: u32 = 0;
 
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             if (self.exchange) flags |= c.RENAME_SWAP;
             if (self.exclude) flags |= c.RENAME_EXCL;
             if (self.nofollow) flags |= c.RENAME_NOFOLLOW_ANY;
@@ -2573,7 +2573,7 @@ pub fn symlinkW(dest: [:0]const u16, target: [:0]const u16, options: WindowsSyml
 }
 
 pub fn clonefile(from: [:0]const u8, to: [:0]const u8) Maybe(void) {
-    if (comptime !Environment.isMac) @compileError("macOS only");
+    if (comptime !Environment.isDarwin) @compileError("macOS only");
 
     while (true) {
         if (Maybe(void).errnoSys(c.clonefile(from, to, 0), .clonefile)) |err| {
@@ -2587,7 +2587,7 @@ pub fn clonefile(from: [:0]const u8, to: [:0]const u8) Maybe(void) {
 }
 
 pub fn clonefileat(from: FD, from_path: [:0]const u8, to: FD, to_path: [:0]const u8) Maybe(void) {
-    if (comptime !Environment.isMac) {
+    if (comptime !Environment.isDarwin) {
         @compileError("macOS only");
     }
 
@@ -2619,7 +2619,7 @@ pub fn clonefileat(from: FD, from_path: [:0]const u8, to: FD, to_path: [:0]const
 }
 
 pub fn copyfile(from: [:0]const u8, to: [:0]const u8, flags: posix.system.COPYFILE) Maybe(void) {
-    if (comptime !Environment.isMac) @compileError("macOS only");
+    if (comptime !Environment.isDarwin) @compileError("macOS only");
 
     while (true) {
         if (Maybe(void).errnoSys(c.copyfile(from, to, null, flags), .copyfile)) |err| {
@@ -2631,7 +2631,7 @@ pub fn copyfile(from: [:0]const u8, to: [:0]const u8, flags: posix.system.COPYFI
 }
 
 pub fn fcopyfile(fd_in: bun.FileDescriptor, fd_out: bun.FileDescriptor, flags: posix.system.COPYFILE) Maybe(void) {
-    if (comptime !Environment.isMac) @compileError("macOS only");
+    if (comptime !Environment.isDarwin) @compileError("macOS only");
 
     while (true) {
         if (Maybe(void).errnoSys(syscall.fcopyfile(fd_in.cast(), fd_out.cast(), null, flags), .fcopyfile)) |err| {
@@ -2841,7 +2841,7 @@ pub fn setsockopt(fd: bun.FileDescriptor, level: c_int, optname: u32, value: i32
 }
 
 pub fn setNoSigpipe(fd: bun.FileDescriptor) Maybe(void) {
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         log("setNoSigpipe({f})", .{fd});
         return switch (setsockopt(fd, std.posix.SOL.SOCKET, std.posix.SO.NOSIGPIPE, 1)) {
             .result => .success,
@@ -2936,7 +2936,7 @@ pub fn socketpairImpl(domain: socketpair_t, socktype: socketpair_t, protocol: so
                 }
             }
 
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (for_shell) {
                     // see the comment on `socketpairForShell` for why we don't
                     // set SO_NOSIGPIPE here.
@@ -3542,7 +3542,7 @@ pub fn setFileOffset(fd: bun.FileDescriptor, offset: usize) Maybe(void) {
         ) orelse .success;
     }
 
-    if (comptime Environment.isMac) {
+    if (comptime Environment.isDarwin) {
         return Maybe(void).errnoSysFd(
             std.c.lseek(fd.cast(), @intCast(offset), posix.SEEK.SET),
             .lseek,
@@ -4307,7 +4307,7 @@ pub fn dlopen(filename: [:0]const u8, flags: std.c.RTLD) ?*anyopaque {
 pub fn dlsymImpl(handle: ?*anyopaque, name: [:0]const u8) ?*anyopaque {
     if (comptime Environment.isWindows) {
         return bun.windows.GetProcAddressA(handle, name);
-    } else if (comptime Environment.isMac or Environment.isLinux) {
+    } else if (comptime Environment.isDarwin or Environment.isLinux) {
         return std.c.dlsym(handle, name.ptr);
     }
 

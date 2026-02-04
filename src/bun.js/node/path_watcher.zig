@@ -186,7 +186,7 @@ pub const PathWatcherManager = struct {
 
                         for (watchers) |w| {
                             if (w) |watcher| {
-                                if (comptime Environment.isMac) {
+                                if (comptime Environment.isDarwin) {
                                     if (watcher.fsevents_watcher != null) continue;
                                 }
                                 const entry_point = watcher.path.dirname;
@@ -253,7 +253,7 @@ pub const PathWatcherManager = struct {
                         const event_type: PathWatcher.EventType = if (event.op.create or event.op.delete or event.op.rename or event.op.move_to) .rename else .change;
                         for (watchers) |w| {
                             if (w) |watcher| {
-                                if (comptime Environment.isMac) {
+                                if (comptime Environment.isDarwin) {
                                     if (watcher.fsevents_watcher != null) continue;
                                 }
                                 const entry_point = watcher.path.dirname;
@@ -563,7 +563,7 @@ pub const PathWatcherManager = struct {
         if (path.is_file) {
             try this.main_watcher.addFile(path.fd, path.path, path.hash, .file, .invalid, null, false).unwrap();
         } else {
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (watcher.fsevents_watcher != null) {
                     return;
                 }
@@ -627,7 +627,7 @@ pub const PathWatcherManager = struct {
                     this.watcher_count -= 1;
 
                     this._decrementPathRefNoLock(watcher.path.path);
-                    if (comptime Environment.isMac) {
+                    if (comptime Environment.isDarwin) {
                         if (watcher.fsevents_watcher != null) {
                             break;
                         }
@@ -737,7 +737,7 @@ pub const PathWatcher = struct {
     pub fn init(manager: *PathWatcherManager, path: PathWatcherManager.PathInfo, recursive: bool, callback: Callback, updateEndCallback: UpdateEndCallback, ctx: ?*anyopaque) !*PathWatcher {
         var this = try bun.default_allocator.create(PathWatcher);
 
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             if (!path.is_file) {
                 var buffer: bun.PathBuffer = undefined;
                 const resolved_path_temp = std.os.getFdPath(path.fd.cast(), &buffer) catch |err| {
@@ -881,7 +881,7 @@ pub const PathWatcher = struct {
         }
 
         if (this.manager) |manager| {
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (this.fsevents_watcher) |watcher| {
                     // first unregister on FSEvents
                     watcher.deinit();
@@ -896,7 +896,7 @@ pub const PathWatcher = struct {
             }
         }
 
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             if (this.resolved_path) |path| {
                 bun.default_allocator.free(path);
             }

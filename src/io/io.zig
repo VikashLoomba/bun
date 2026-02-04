@@ -80,7 +80,7 @@ pub const Loop = struct {
 
         if (comptime Environment.isLinux) {
             this.tickEpoll();
-        } else if (comptime Environment.isMac) {
+        } else if (comptime Environment.isDarwin) {
             this.tickKqueue();
         } else {
             @panic("TODO on this platform");
@@ -188,7 +188,7 @@ pub const Loop = struct {
     }
 
     pub fn tickKqueue(this: *Loop) void {
-        if (comptime !Environment.isMac) {
+        if (comptime !Environment.isDarwin) {
             @compileError("Kqueue is MacOS-Only");
         }
 
@@ -392,7 +392,7 @@ pub const Poll = struct {
     flags: Flags.Set = Flags.Set.initEmpty(),
     generation_number: GenerationNumberInt = 0,
 
-    const GenerationNumberInt = if (Environment.isMac and Environment.allow_assert) u64 else u0;
+    const GenerationNumberInt = if (Environment.isDarwin and Environment.allow_assert) u64 else u0;
 
     var generation_number_monotonic: GenerationNumberInt = 0;
 

@@ -543,7 +543,7 @@ pub fn handleRootError(err: anyerror, error_return_trace: ?*std.builtin.StackTra
         error.SystemFdQuotaExceeded => {
             if (comptime bun.Environment.isPosix) {
                 const limit = if (std.posix.getrlimit(.NOFILE)) |limit| limit.cur else |_| null;
-                if (comptime bun.Environment.isMac) {
+                if (comptime bun.Environment.isDarwin) {
                     Output.prettyError(
                         \\<r><red>error<r>: Your computer ran out of file descriptors <d>(<red>SystemFdQuotaExceeded<r><d>)<r>
                         \\
@@ -607,7 +607,7 @@ pub fn handleRootError(err: anyerror, error_return_trace: ?*std.builtin.StackTra
         error.ProcessFdQuotaExceeded => {
             if (comptime bun.Environment.isPosix) {
                 const limit = if (std.posix.getrlimit(.NOFILE)) |limit| limit.cur else |_| null;
-                if (comptime bun.Environment.isMac) {
+                if (comptime bun.Environment.isDarwin) {
                     Output.prettyError(
                         \\
                         \\<r><red>error<r>: bun ran out of file descriptors <d>(<red>ProcessFdQuotaExceeded<r><d>)<r>
@@ -713,7 +713,7 @@ pub fn handleRootError(err: anyerror, error_return_trace: ?*std.builtin.StackTra
                                 );
                             }
                         }
-                    } else if (bun.Environment.isMac) {
+                    } else if (bun.Environment.isDarwin) {
                         Output.prettyError(
                             \\
                             \\If that still doesn't work, you may need to run:
@@ -812,7 +812,7 @@ pub fn reportBaseUrl() []const u8 {
 }
 
 const arch_display_string = if (bun.Environment.isAarch64)
-    if (bun.Environment.isMac) "Silicon" else "arm64"
+    if (bun.Environment.isDarwin) "Silicon" else "arm64"
 else
     "x64";
 
@@ -975,7 +975,7 @@ pub fn printMetadata(writer: anytype) !void {
         } else if (bun.Environment.isLinux and bun.Environment.isMusl) {
             const kernel_version = bun.analytics.GenerateHeader.GeneratePlatform.kernelVersion();
             try writer.print("Linux Kernel v{d}.{d}.{d} | musl\n", .{ kernel_version.major, kernel_version.minor, kernel_version.patch });
-        } else if (bun.Environment.isMac) {
+        } else if (bun.Environment.isDarwin) {
             try writer.print("macOS v{s}\n", .{platform.version});
         } else if (bun.Environment.isWindows) {
             try writer.print("Windows v{f}\n", .{std.zig.system.windows.detectRuntimeVersion()});
@@ -1278,7 +1278,7 @@ const StackLine = struct {
 
     pub fn format(line: StackLine, writer: *std.Io.Writer) !void {
         try writer.print("0x{x}{s}{s}", .{
-            if (bun.Environment.isMac) @as(u64, line.address) + 0x100000000 else line.address,
+            if (bun.Environment.isDarwin) @as(u64, line.address) + 0x100000000 else line.address,
             if (line.object != null) " @ " else "",
             line.object orelse "",
         });
@@ -1434,7 +1434,7 @@ fn isReportingEnabled() bool {
         return true;
 
     // Change in v1.1.10: enable crash reporter auto upload on macOS and Windows.
-    if (bun.Environment.isMac or bun.Environment.isWindows) {
+    if (bun.Environment.isDarwin or bun.Environment.isWindows) {
         return true;
     }
 
@@ -1865,7 +1865,7 @@ pub const js_bindings = struct {
     }
 
     pub fn jsGetMachOImageZeroOffset(_: *bun.jsc.JSGlobalObject, _: *bun.jsc.CallFrame) bun.JSError!JSValue {
-        if (!bun.Environment.isMac) return .js_undefined;
+        if (!bun.Environment.isDarwin) return .js_undefined;
 
         const header = std.c._dyld_get_image_header(0) orelse return .js_undefined;
         const base_address = @intFromPtr(header);

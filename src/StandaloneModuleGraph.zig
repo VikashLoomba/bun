@@ -704,7 +704,7 @@ pub const StandaloneModuleGraph = struct {
                 break :brk file;
             }
 
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 // if we're on a mac, use clonefile() if we can
                 // failure is okay, clonefile is just a fast path.
                 if (Syscall.clonefile(self_exe, zname) == .result) {
@@ -1229,7 +1229,7 @@ pub const StandaloneModuleGraph = struct {
     /// Loads the standalone module graph from the executable, allocates it on the heap,
     /// sets it globally, and returns the pointer.
     pub fn fromExecutable(allocator: std.mem.Allocator) !?*StandaloneModuleGraph {
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             const macho_bytes = Macho.getData() orelse return null;
             if (macho_bytes.len < @sizeOf(Offsets) + trailer.len) {
                 Output.debugWarn("bun standalone module graph is too small to be valid", .{});

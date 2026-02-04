@@ -790,7 +790,7 @@ pub const GetAddrInfoRequest = struct {
 
             extern fn getaddrinfo_send_reply(bun.mach_port, *const dns.LibInfo.GetaddrinfoAsyncHandleReply) bool;
             pub fn onMachportChange(this: *GetAddrInfoRequest) void {
-                if (comptime !Environment.isMac)
+                if (comptime !Environment.isDarwin)
                     unreachable;
                 bun.jsc.markBinding(@src());
 
@@ -1223,7 +1223,7 @@ pub const internal = struct {
 
         valid: bool = true,
 
-        libinfo: if (Environment.isMac) MacAsyncDNS else void = if (Environment.isMac) .{},
+        libinfo: if (Environment.isDarwin) MacAsyncDNS else void = if (Environment.isDarwin) .{},
         can_retry_for_addrconfig: bool = default_hints.flags.ADDRCONFIG,
 
         pub fn isExpired(this: *Request, timestamp_to_store: *u32) bool {
@@ -1708,7 +1708,7 @@ pub const internal = struct {
         dns_cache_size = global_cache.len;
         global_cache.lock.unlock();
 
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             if (!bun.feature_flag.BUN_FEATURE_FLAG_DISABLE_DNS_CACHE_LIBINFO.get()) {
                 const res = lookupLibinfo(req, loop.internal_loop_data.getParent());
                 log("getaddrinfo({s}) = cache miss (libinfo)", .{host orelse ""});

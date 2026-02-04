@@ -263,7 +263,7 @@ pub const GenerateHeader = struct {
         var linux_kernel_version: Semver.Version = undefined;
         var run_once = std.once(struct {
             fn run() void {
-                if (comptime Environment.isMac) {
+                if (comptime Environment.isDarwin) {
                     platform_ = forMac();
                 } else if (comptime Environment.isPosix) {
                     platform_ = forLinux();
@@ -295,7 +295,7 @@ pub const GenerateHeader = struct {
             use_msgx_on_macos_14_or_later = version.valid and version.version.max().major >= 14;
         }
         pub export fn Bun__doesMacOSVersionSupportSendRecvMsgX() i32 {
-            if (comptime !Environment.isMac) {
+            if (comptime !Environment.isDarwin) {
                 // this should not be used on non-mac platforms.
                 return 0;
             }

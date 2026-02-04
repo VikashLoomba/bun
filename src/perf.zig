@@ -31,7 +31,7 @@ fn isEnabledOnLinuxOnce() void {
 }
 
 fn isEnabledOnce() void {
-    if (comptime bun.Environment.isMac) {
+    if (comptime bun.Environment.isDarwin) {
         isEnabledOnMacOSOnce();
         if (Darwin.get() == null) {
             is_enabled.store(false, .seq_cst);
@@ -82,7 +82,7 @@ pub fn trace(comptime name: [:0]const u8) Ctx {
         return .{ .disabled = .{} };
     }
 
-    if (comptime bun.Environment.isMac) {
+    if (comptime bun.Environment.isDarwin) {
         return .{ .enabled = Darwin.init(@intFromEnum(@field(PerfEvent, name))) };
     } else if (comptime bun.Environment.isLinux) {
         return .{ .enabled = Linux.init(@field(PerfEvent, name)) };

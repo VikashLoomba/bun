@@ -630,7 +630,7 @@ pub const Installer = struct {
                     // value "in time".
                     backend: switch (installer.supported_backend.load(.monotonic)) {
                         .clonefile => {
-                            if (comptime !Environment.isMac) {
+                            if (comptime !Environment.isDarwin) {
                                 installer.supported_backend.store(.hardlink, .monotonic);
                                 continue :backend .hardlink;
                             }

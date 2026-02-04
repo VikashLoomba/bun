@@ -31,7 +31,7 @@ fn getDlError(allocator: std.mem.Allocator) ![]const u8 {
 /// This is dangerous as it allows overwriting executable regions of memory.
 /// Do not pass in user-defined functions (including JSFunctions).
 fn dangerouslyRunWithoutJitProtections(R: type, func: anytype, args: anytype) R {
-    const has_protection = (Environment.isAarch64 and Environment.isMac);
+    const has_protection = (Environment.isAarch64 and Environment.isDarwin);
     if (comptime has_protection) pthread_jit_write_protect_np(@intFromBool(false));
     defer if (comptime has_protection) pthread_jit_write_protect_np(@intFromBool(true));
     return @call(bun.callmod_inline, func, args);
@@ -147,7 +147,7 @@ pub const FFI = struct {
             extern "c" fn calloc(nmemb: usize, size: usize) callconv(.c) ?*anyopaque;
             extern "c" fn perror([*:0]const u8) callconv(.c) void;
 
-            const mac = if (Environment.isMac) struct {
+            const mac = if (Environment.isDarwin) struct {
                 var ffi_stdinp: *anyopaque = @extern(*anyopaque, .{ .name = "__stdinp" });
                 var ffi_stdoutp: *anyopaque = @extern(*anyopaque, .{ .name = "__stdoutp" });
                 var ffi_stderrp: *anyopaque = @extern(*anyopaque, .{ .name = "__stderrp" });
@@ -246,7 +246,7 @@ pub const FFI = struct {
         var cached_default_system_library_dir: [:0]const u8 = "";
         var cached_default_system_include_dir_once = std.once(getSystemRootDirOnce);
         fn getSystemRootDirOnce() void {
-            if (Environment.isMac) {
+            if (Environment.isDarwin) {
                 var which_buf: [bun.MAX_PATH_BYTES]u8 = undefined;
 
                 var process = bun.spawnSync(&.{
@@ -345,7 +345,7 @@ pub const FFI = struct {
                 };
             }
 
-            if (Environment.isMac) {
+            if (Environment.isDarwin) {
                 add_system_include_dir: {
                     const dirs_to_try = [_][]const u8{
                         bun.env_var.SDKROOT.get() orelse "",

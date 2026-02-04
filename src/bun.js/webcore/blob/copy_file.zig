@@ -431,7 +431,7 @@ pub const CopyFile = struct {
 
             // First, we attempt to clonefile() on macOS
             // This is the fastest way to copy a file.
-            if (comptime Environment.isMac) {
+            if (comptime Environment.isDarwin) {
                 if (this.offset == 0 and this.source_file_store.pathlike == .path and this.destination_file_store.pathlike == .path) {
                     do_clonefile: {
                         var path_buf: bun.PathBuffer = undefined;
@@ -586,7 +586,7 @@ pub const CopyFile = struct {
             return;
         }
 
-        if (comptime Environment.isMac) {
+        if (comptime Environment.isDarwin) {
             this.doFCopyFileWithReadWriteLoopFallback() catch {
                 this.doClose();
 

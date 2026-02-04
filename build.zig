@@ -109,6 +109,9 @@ pub fn getOSVersionMin(os: OperatingSystem) ?Target.Query.OsVersion {
         .mac => .{
             .semver = .{ .major = 13, .minor = 0, .patch = 0 },
         },
+        .ios => .{
+            .semver = .{ .major = 16, .minor = 0, .patch = 0 },
+        },
 
         // Windows 10 1809 is the minimum supported version
         // One case where this is specifically required is in `deleteOpenedFile`
@@ -136,7 +139,7 @@ pub fn getCpuModel(os: OperatingSystem, arch: Arch) ?Target.Query.CpuModel {
     }
 
     // Be explicit and ensure we do not accidentally target a newer M-series chip
-    if (os == .mac and arch == .aarch64) {
+    if (os.isDarwin() and arch == .aarch64) {
         return .{ .explicit = &Target.aarch64.cpu.apple_m1 };
     }
 
@@ -163,6 +166,7 @@ pub fn build(b: *Build) !void {
             .wasm
         else switch (temp_resolved.result.os.tag) {
             .macos => .mac,
+            .ios => .ios,
             .linux => .linux,
             .windows => .windows,
             else => |t| std.debug.panic("Unsupported OS tag {}", .{t}),
@@ -289,7 +293,7 @@ pub fn build(b: *Build) !void {
                 .strip = false,
             }),
             .use_llvm = !build_options.no_llvm,
-            .use_lld = if (build_options.os == .mac) false else !build_options.no_llvm,
+            .use_lld = if (build_options.os.isDarwin()) false else !build_options.no_llvm,
         });
         configureObj(b, &o, unit_tests);
         // Setting `linker_allow_shlib_undefined` causes the linker to ignore
@@ -750,7 +754,7 @@ fn configureObj(b: *Build, opts: *BunBuildOptions, obj: *Compile) void {
 
     // Object options
     obj.use_llvm = !opts.no_llvm;
-    obj.use_lld = if (opts.os == .mac or opts.os == .linux) false else !opts.no_llvm;
+    obj.use_lld = if (opts.os.isDarwin() or opts.os == .linux) false else !opts.no_llvm;
 
     if (opts.optimize == .Debug) {
         if (@hasField(std.meta.Child(@TypeOf(obj)), "llvm_codegen_threads"))
@@ -851,7 +855,7 @@ fn addInternalImports(b: *Build, mod: *Module, opts: *BunBuildOptions) void {
 
     const zlib_internal_path = switch (os) {
         .windows => "src/deps/zlib.win32.zig",
-        .linux, .mac => "src/deps/zlib.posix.zig",
+        .linux, .mac, .ios => "src/deps/zlib.posix.zig",
         else => null,
     };
     if (zlib_internal_path) |path| {
@@ -861,7 +865,7 @@ fn addInternalImports(b: *Build, mod: *Module, opts: *BunBuildOptions) void {
     }
 
     const async_path = switch (os) {
-        .linux, .mac => "src/async/posix_event_loop.zig",
+        .linux, .mac, .ios => "src/async/posix_event_loop.zig",
         .windows => "src/async/windows_event_loop.zig",
         else => "src/async/stub_event_loop.zig",
     };
