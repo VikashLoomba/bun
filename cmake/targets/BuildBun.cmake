@@ -802,6 +802,11 @@ list(APPEND BUN_CPP_SOURCES
   ${BUN_BINDGENV2_CPP_OUTPUTS}
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  list(APPEND BUN_CPP_SOURCES ${CWD}/src/ios_stubs.c ${CWD}/src/ios_webkit_stubs.cpp)
+  set_source_files_properties(${CWD}/src/ios_webkit_stubs.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif()
+
 if(WIN32)
   if(ENABLE_CANARY)
     set(Bun_VERSION_WITH_TAG ${VERSION}-canary.${CANARY_REVISION})
@@ -1458,18 +1463,20 @@ if(NOT BUN_CPP_ONLY)
       ${TEST_BUN_COMMAND_ENV_WRAP} ${TEST_BUN_COMMAND_BASE})
   endif()
 
-  register_command(
-    TARGET
-      ${bun}
-    TARGET_PHASE
-      POST_BUILD
-    COMMENT
-      "Testing ${bun}"
-    COMMAND
-      ${TEST_BUN_COMMAND}
-    CWD
-      ${BUILD_PATH}
-  )
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    register_command(
+      TARGET
+        ${bun}
+      TARGET_PHASE
+        POST_BUILD
+      COMMENT
+        "Testing ${bun}"
+      COMMAND
+        ${TEST_BUN_COMMAND}
+      CWD
+        ${BUILD_PATH}
+    )
+  endif()
 
   if(CI)
     set(BUN_FEATURES_SCRIPT ${CWD}/scripts/features.mjs)
