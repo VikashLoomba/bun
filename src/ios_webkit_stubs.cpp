@@ -135,9 +135,7 @@ void _ZN3JSC24JSGlobalObjectDebuggable7connectERN9Inspector15FrontendChannelEbb(
 void _ZN3JSC24JSGlobalObjectDebuggable10disconnectERN9Inspector15FrontendChannelE(void*, void*) {}
 void _ZN3JSC24JSGlobalObjectDebuggable25dispatchMessageFromRemoteEON3WTF6StringE(void*, void*) {}
 
-// WTFTimer__fire: called from Bun's Zig Timer.zig to fire a WTF::RunLoop::TimerBase.
-// RunLoopBun.cpp (which defines this properly) is not compiled in JSCOnly port.
-// TODO: compile RunLoopBun.cpp into libWTF.a to get proper timer support.
-void WTFTimer__fire(void* timer) { (void)timer; }
+// Debug-only symbol referenced by Zig object when mixing debug Zig with release C++
+const char* Bun__CallFrame__describeFrame(void* callFrame) { (void)callFrame; return "<frame>"; }
 
 } // extern "C"

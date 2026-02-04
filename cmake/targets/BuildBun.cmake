@@ -1376,7 +1376,7 @@ if(NOT BUN_CPP_ONLY)
     set(CMAKE_STRIP_FLAGS -R .eh_frame -R .gcc_except_table)
   endif()
 
-  if(bunStrip)
+  if(bunStrip AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # First, strip bun-profile.exe to create bun.exe
     register_command(
       TARGET
@@ -1502,7 +1502,7 @@ if(NOT BUN_CPP_ONLY)
     )
   endif()
 
-  if(CMAKE_HOST_APPLE AND bunStrip)
+  if(CMAKE_HOST_APPLE AND bunStrip AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     register_command(
       TARGET
         ${bun}
@@ -1520,6 +1520,7 @@ if(NOT BUN_CPP_ONLY)
           -j ${CMAKE_BUILD_PARALLEL_LEVEL}
       CWD
         ${BUILD_PATH}
+      ALWAYS_RUN
       OUTPUTS
         ${BUILD_PATH}/${bun}.dSYM
     )
