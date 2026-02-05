@@ -3,41 +3,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <util.h>  // for forkpty on Darwin
-#include <termios.h>
-#include <fcntl.h>
 
-// External Bun entry points
 extern void bun_main(void);
 extern void (*bun_ios_exit_callback)(uint32_t code);
 
-// These are read by Bun to get command-line arguments on iOS
 int bun_ios_argc = 0;
 char** bun_ios_argv = NULL;
-
-// Global state for pty mode
-static int g_pty_master = -1;
-static bun_output_callback_t g_output_callback = NULL;
 
 struct bun_thread_args {
     int argc;
     char** argv;
     bun_exit_callback_t on_exit;
-    int pty_slave;  // -1 if not using pty
+    int stdin_fd;
+    int stdout_fd;
+    int stderr_fd;
 };
 
 static void* bun_thread_entry(void* arg) {
     struct bun_thread_args* args = (struct bun_thread_args*)arg;
 
-    // Set up pty if provided
-    if (args->pty_slave >= 0) {
-        dup2(args->pty_slave, STDIN_FILENO);
-        dup2(args->pty_slave, STDOUT_FILENO);
-        dup2(args->pty_slave, STDERR_FILENO);
-        if (args->pty_slave > STDERR_FILENO) {
-            close(args->pty_slave);
-        }
+    // Redirect I/O if requested
+    if (args->stdin_fd >= 0) {
+        dup2(args->stdin_fd, STDIN_FILENO);
+        if (args->stdin_fd > STDERR_FILENO) close(args->stdin_fd);
     }
+    if (args->stdout_fd >= 0) {
+        dup2(args->stdout_fd, STDOUT_FILENO);
+        if (args->stdout_fd > STDERR_FILENO) close(args->stdout_fd);
+    }
+    if (args->stderr_fd >= 0) {
+        dup2(args->stderr_fd, STDERR_FILENO);
+        if (args->stderr_fd > STDERR_FILENO) close(args->stderr_fd);
+    } else if (args->stderr_fd == -1 && args->stdout_fd >= 0) {
+        // -1 means "same as stdout"
+        dup2(STDOUT_FILENO, STDERR_FILENO);
+    }
+    // -2 means "keep default"
 
     bun_ios_exit_callback = args->on_exit;
     bun_ios_argc = args->argc;
@@ -45,10 +46,8 @@ static void* bun_thread_entry(void* arg) {
 
     bun_main();
 
-    // If we get here, bun_main returned without calling exit
     if (args->on_exit) args->on_exit(0);
 
-    // Cleanup
     for (int i = 0; i < args->argc; i++) free(args->argv[i]);
     free(args->argv);
     free(args);
@@ -76,7 +75,9 @@ int bun_main_thread(int argc, char** argv, bun_exit_callback_t on_exit) {
     for (int i = 0; i < argc; i++) args->argv[i] = strdup(argv[i]);
     args->argv[argc] = NULL;
     args->on_exit = on_exit;
-    args->pty_slave = -1;
+    args->stdin_fd = -2;  // keep default
+    args->stdout_fd = -2;
+    args->stderr_fd = -2;
 
     return start_bun_thread(args);
 }
@@ -92,70 +93,27 @@ int bun_eval_async(const char* working_dir, const char* code, bun_exit_callback_
     args->argv[2] = strdup(code);
     args->argv[3] = NULL;
     args->on_exit = on_exit;
-    args->pty_slave = -1;
+    args->stdin_fd = -2;
+    args->stdout_fd = -2;
+    args->stderr_fd = -2;
 
     return start_bun_thread(args);
 }
 
-int bun_main_with_pty(int argc, char** argv, bun_exit_callback_t on_exit) {
-    int master_fd;
-    int slave_fd;
-    
-    // Open a new pty pair
-    struct termios termp;
-    struct winsize winp = {.ws_row = 24, .ws_col = 80, .ws_xpixel = 0, .ws_ypixel = 0};
-    
-    // Use openpty instead of forkpty since we're using threads, not fork
-    if (openpty(&master_fd, &slave_fd, NULL, NULL, &winp) < 0) {
-        return -1;
-    }
-    
-    // Configure terminal
-    if (tcgetattr(slave_fd, &termp) == 0) {
-        // Raw mode for proper terminal handling
-        cfmakeraw(&termp);
-        termp.c_lflag |= ISIG;  // Keep signals
-        termp.c_oflag |= OPOST | ONLCR;  // Process output
-        tcsetattr(slave_fd, TCSANOW, &termp);
-    }
-    
-    // Make master non-blocking
-    int flags = fcntl(master_fd, F_GETFL, 0);
-    fcntl(master_fd, F_SETFL, flags | O_NONBLOCK);
-    
-    g_pty_master = master_fd;
-
+int bun_main_with_io(int argc, char** argv,
+                     int stdin_fd, int stdout_fd, int stderr_fd,
+                     bun_exit_callback_t on_exit) {
     struct bun_thread_args* args = malloc(sizeof(*args));
-    if (!args) {
-        close(master_fd);
-        close(slave_fd);
-        return -1;
-    }
+    if (!args) return -1;
 
     args->argc = argc;
     args->argv = malloc(sizeof(char*) * (argc + 1));
     for (int i = 0; i < argc; i++) args->argv[i] = strdup(argv[i]);
     args->argv[argc] = NULL;
     args->on_exit = on_exit;
-    args->pty_slave = slave_fd;
+    args->stdin_fd = stdin_fd;
+    args->stdout_fd = stdout_fd;
+    args->stderr_fd = stderr_fd;
 
-    if (start_bun_thread(args) != 0) {
-        close(master_fd);
-        close(slave_fd);
-        free(args->argv);
-        free(args);
-        g_pty_master = -1;
-        return -1;
-    }
-
-    return master_fd;
-}
-
-int bun_write_stdin(const char* data, uint32_t len) {
-    if (g_pty_master < 0) return -1;
-    return (int)write(g_pty_master, data, len);
-}
-
-void bun_set_output_callback(bun_output_callback_t callback) {
-    g_output_callback = callback;
+    return start_bun_thread(args);
 }
