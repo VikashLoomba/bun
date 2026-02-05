@@ -125,7 +125,14 @@ pub fn exit(code: u32) noreturn {
         .ios => {
             // On iOS, terminate just the Bun thread instead of the whole process.
             // The host app continues running.
-            if (bun_ios_exit_callback) |cb| cb(code);
+            if (bun_ios_exit_callback) |cb| {
+                cb(code);
+                // Don't exit - just sleep this thread forever so host app keeps running
+                while (true) {
+                    std.Thread.sleep(std.time.ns_per_s * 60 * 60 * 24); // Sleep 1 day
+                }
+            }
+            // Only call _exit if no callback is set (command-line mode)
             std.c._exit(@bitCast(code));
         },
         .mac => std.c.exit(@bitCast(code)),
