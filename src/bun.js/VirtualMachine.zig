@@ -1202,6 +1202,7 @@ pub fn init(opts: Options) !*VirtualMachine {
     vm.regular_event_loop.global = vm.global;
     vm.jsc_vm = vm.global.vm();
     uws.Loop.get().internal_loop_data.jsc_vm = vm.jsc_vm;
+    vm.eventLoop().ensureWaker();
     vm.smol = opts.smol;
     vm.dns_result_order = opts.dns_result_order;
 
@@ -1437,6 +1438,7 @@ pub fn initBake(opts: Options) anyerror!*VirtualMachine {
         vm.global = BakeCreateProdGlobal(vm.console);
         vm.jsc_vm = vm.global.vm();
         vm.eventLoop().ensureWaker();
+        uws.Loop.get().internal_loop_data.jsc_vm = vm.jsc_vm;
     }
 
     vm.transpiler.macro_context = null;

@@ -1708,7 +1708,10 @@ pub const internal = struct {
         dns_cache_size = global_cache.len;
         global_cache.lock.unlock();
 
-        if (comptime Environment.isDarwin) {
+        // On iOS, skip libinfo DNS and always use the work pool.
+        // The HTTP thread's uSockets loop doesn't have a properly configured parent event loop,
+        // and libinfo requires the parent to dispatch results back to the correct thread.
+        if (comptime Environment.isDarwin and !Environment.isIOS) {
             if (!bun.feature_flag.BUN_FEATURE_FLAG_DISABLE_DNS_CACHE_LIBINFO.get()) {
                 const res = lookupLibinfo(req, loop.internal_loop_data.getParent());
                 log("getaddrinfo({s}) = cache miss (libinfo)", .{host orelse ""});
