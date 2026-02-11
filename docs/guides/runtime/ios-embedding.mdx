@@ -1,0 +1,179 @@
+---
+title: Embedding Bun in iOS Apps
+description: How to embed the Bun JavaScript runtime in native iOS applications.
+---
+
+Bun can be embedded in iOS applications as a static library, providing a JavaScript runtime with Node.js API compatibility inside your app.
+
+## Overview
+
+When embedded in iOS, Bun runs on a dedicated thread with redirected I/O, allowing your Swift/Objective-C code to communicate with JavaScript via pipes or file descriptors.
+
+### Limitations
+
+Due to iOS platform restrictions:
+
+- **No JIT compilation** — JavaScriptCore runs in interpreter-only mode
+- **No FFI/TCC** — Dynamic code generation is unavailable
+- **Sandboxed filesystem** — Apps can only access their container directories
+- **No process spawning** — `child_process.spawn()` is restricted
+
+## Building for iOS
+
+### Prerequisites
+
+- Xcode with iOS SDK (iOS 17.0+)
+- CMake 3.20+
+- Zig 0.13+
+
+### Build Commands
+
+```bash
+# iOS Simulator (arm64)
+cmake -B build-ios-sim \
+    -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-simulator.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+cmake --build build-ios-sim
+
+# Output: build-ios-sim/bun (static library + headers)
+```
+
+## C Embedding API
+
+The embedding API is defined in `src/ios/bun_ios.h`:
+
+```c
+#include "bun_ios.h"
+
+// Callback when Bun exits
+typedef void (*bun_exit_callback_t)(uint32_t exit_code);
+
+// Start Bun with custom I/O
+int bun_start(
+    int argc,
+    const char** argv,
+    int stdin_fd,      // -1 for /dev/null, -2 for default
+    int stdout_fd,     // -1 for /dev/null, -2 for default
+    int stderr_fd,     // -1 same as stdout, -2 for default
+    bun_exit_callback_t on_exit
+);
+
+// Get version string
+const char* bun_version(void);
+
+// Convenience: evaluate JS code
+int bun_eval(const char* working_dir, const char* code, 
+             int stdin_fd, int stdout_fd, int stderr_fd,
+             bun_exit_callback_t on_exit);
+
+// Convenience: run a script file
+int bun_run(const char* script_path,
+            int stdin_fd, int stdout_fd, int stderr_fd,
+            bun_exit_callback_t on_exit);
+```
+
+## Swift Integration
+
+### Basic Setup
+
+```swift
+import Foundation
+
+// Bridge header (BunBridge.h)
+// #include "bun_ios.h"
+
+class BunRuntime {
+    private var stdinPipe: Pipe?
+    private var stdoutPipe: Pipe?
+    
+    func runScript(_ scriptPath: String, completion: @escaping (Int32) -> Void) {
+        stdinPipe = Pipe()
+        stdoutPipe = Pipe()
+        
+        // Set up output handling
+        stdoutPipe?.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            if !data.isEmpty {
+                // Process output from Bun
+                print(String(data: data, encoding: .utf8) ?? "")
+            }
+        }
+        
+        // Start Bun
+        let args = ["bun", "run", scriptPath]
+        var cArgs = args.map { strdup($0) }
+        defer { cArgs.forEach { free($0) } }
+        cArgs.append(nil)
+        
+        let exitCallback: bun_exit_callback_t = { code in
+            DispatchQueue.main.async {
+                completion(Int32(code))
+            }
+        }
+        
+        bun_start(
+            Int32(args.count),
+            &cArgs,
+            stdinPipe!.fileHandleForReading.fileDescriptor,
+            stdoutPipe!.fileHandleForWriting.fileDescriptor,
+            -1,  // stderr same as stdout
+            exitCallback
+        )
+    }
+    
+    func write(_ text: String) {
+        stdinPipe?.fileHandleForWriting.write(text.data(using: .utf8)!)
+    }
+}
+```
+
+### Xcode Project Setup
+
+1. Add `libbun.a` to your project
+2. Add header search path for `bun_ios.h`
+3. Create bridging header with `#include "bun_ios.h"`
+4. Link frameworks: `JavaScriptCore`, `Foundation`, `Security`
+5. Add `-lc++` to "Other Linker Flags"
+
+## Testing
+
+### Run Unit Tests
+
+```bash
+# On macOS (tests Darwin shared codepaths)
+bun test test/ios/
+
+# In iOS Simulator
+scripts/ios-test.sh
+```
+
+### Manual Testing
+
+```bash
+# Boot simulator
+xcrun simctl boot "iPhone 15 Pro"
+
+# Install test app
+xcrun simctl install booted path/to/TestApp.app
+
+# Run and capture output
+xcrun simctl launch --console booted com.example.TestApp
+```
+
+## Troubleshooting
+
+### "Library not loaded" Error
+
+Ensure `libbun.a` is properly linked and the binary is code-signed.
+
+### JIT Errors
+
+If you see JIT-related errors, verify that your JSC build has JIT disabled (`ENABLE_JIT=OFF`).
+
+### Sandbox Errors
+
+iOS apps can only access files within their sandbox. Use `FileManager.default.urls(for:in:)` to get valid paths.
+
+## Example Project
+
+See [`test/ios/example-app/`](https://github.com/oven-sh/bun/tree/main/test/ios/example-app) for a complete iOS app demonstrating Bun embedding.
