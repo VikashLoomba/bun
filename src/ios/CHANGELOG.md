@@ -58,7 +58,12 @@ When submitting PR to oven-sh/bun:
 
 ## Testing
 
-Build for iOS Simulator:
+### Unit tests (run on any platform)
+```bash
+bun test test/ios/
+```
+
+### Build for iOS Simulator
 ```bash
 cmake -B build-ios-sim \
     -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-simulator.cmake \
@@ -66,4 +71,6 @@ cmake -B build-ios-sim \
 cmake --build build-ios-sim
 ```
 
-Run tests in iOS Simulator app (see pi-terminal repo).
+### Integration testing
+Create a minimal iOS app that embeds `libbun.a` and calls the `bun_start()` API.
+See `test/ios/` for example usage patterns.
