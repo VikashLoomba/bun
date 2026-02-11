@@ -815,9 +815,15 @@ list(APPEND BUN_CPP_SOURCES
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-  list(APPEND BUN_CPP_SOURCES ${CWD}/src/ios_stubs.c ${CWD}/src/ios_webkit_stubs.cpp ${CWD}/src/ios_api.c)
-  set_source_files_properties(${CWD}/src/ios_api.c PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
-  set_source_files_properties(${CWD}/src/ios_webkit_stubs.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+  # iOS-specific sources (see src/ios/README.md)
+  list(APPEND BUN_CPP_SOURCES
+    ${CWD}/src/ios/embedding.c
+    ${CWD}/src/ios/stubs.c
+    ${CWD}/src/ios/webkit_stubs.cpp
+  )
+  # These files must not use precompiled headers
+  set_source_files_properties(${CWD}/src/ios/embedding.c PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+  set_source_files_properties(${CWD}/src/ios/webkit_stubs.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 endif()
 
 if(WIN32)
