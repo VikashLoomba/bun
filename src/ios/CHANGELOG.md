@@ -11,17 +11,26 @@ This document tracks all changes made to support iOS embedding.
 | `stubs.c` | TCC stubs (JIT unavailable on iOS) |
 | `webkit_stubs.cpp` | JSC debug symbols (missing from iOS build) |
 | `README.md` | Documentation for iOS embedders |
+| `BUILDING_DEVICE.md` | Reproducible iOS device build path and incompatibilities |
+| `patches/webkit-ios-device.patch` | WebKit patch required for the public device build |
 
 ## Build System Changes
 
 | File | Change |
 |------|--------|
 | `cmake/toolchains/ios-simulator.cmake` | New toolchain for iOS Simulator builds |
-| `cmake/targets/BuildBun.cmake` | Added iOS source files |
+| `cmake/toolchains/ios-device.cmake` | Toolchain for reproducible iOS device builds |
+| `cmake/tools/SetupZig.cmake` | Supports `ZIG_PATH_OVERRIDE` for Xcode 26.4-compatible Zig bootstraps |
+| `cmake/targets/BuildBun.cmake` | Added iOS source files and iOS device Zig sysroot selection |
+| `cmake/targets/BuildLolHtml.cmake` | Uses `aarch64-apple-ios` for device builds |
 | `cmake/Options.cmake` | iOS detection and options |
 | `cmake/Globals.cmake` | iOS target configuration |
 | `cmake/CompilerFlags.cmake` | iOS compiler flags |
 | `build.zig` | iOS target support |
+| `scripts/install-zig-autobuild.sh` | Installs a verified working Zig 0.15.2 autobuild |
+| `scripts/build-ios-device-webkit.sh` | Applies the WebKit device patch, builds JSC, and stages headers/libs |
+| `scripts/build-ios-device.sh` | Reproducible Bun iOS device build helper |
+| `scripts/package-ios-device.sh` | Packages `libbun.a` and its dependent static libraries |
 
 ## Runtime Changes
 
@@ -47,6 +56,8 @@ This document tracks all changes made to support iOS embedding.
 - TCC/FFI JIT compilation (no JIT on iOS)
 - File system watching (limited on iOS)
 - Process spawning (sandboxed on iOS)
+- Sampling profiler in the validated device C_LOOP build (`ENABLE_SAMPLING_PROFILER=OFF`)
+- WebAssembly streaming in the validated device C_LOOP build (`ENABLE_WEBASSEMBLY=OFF`)
 
 ## How to Upstream
 
@@ -69,6 +80,14 @@ cmake -B build-ios-sim \
     -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-simulator.cmake \
     -DCMAKE_BUILD_TYPE=Release
 cmake --build build-ios-sim
+```
+
+### Build for iOS Device
+```bash
+./scripts/install-zig-autobuild.sh
+WEBKIT_SRC=/absolute/path/to/WebKit \
+ZIG_PATH_OVERRIDE=/absolute/path/to/bootstrap-aarch64-macos-none \
+./scripts/build-ios-device.sh
 ```
 
 ### Integration testing

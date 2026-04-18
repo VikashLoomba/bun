@@ -24,19 +24,44 @@ Due to iOS platform restrictions:
 
 - Xcode with iOS SDK (iOS 17.0+)
 - CMake 3.20+
-- Zig 0.13+
+- Zig 0.15.2 bootstrap
+- Rust target `aarch64-apple-ios` for `lolhtml`
 
-### Build Commands
+### iOS Simulator
 
 ```bash
-# iOS Simulator (arm64)
 cmake -B build-ios-sim \
     -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-simulator.cmake \
     -DCMAKE_BUILD_TYPE=Release
 cmake --build build-ios-sim
-
-# Output: build-ios-sim/bun (static library + headers)
 ```
+
+### iOS Device (reproducible C_LOOP build)
+
+The validated device path builds WebKit **outside** Bun first, stages it into `build/ios-webkit-device`, and then builds Bun against that staged WebKit.
+
+1. Clone Bun's pinned WebKit commit:
+
+```bash
+git clone https://github.com/oven-sh/WebKit.git /absolute/path/to/WebKit
+git -C /absolute/path/to/WebKit checkout 515344bc5d65aa2d4f9ff277b5fb944f0e051dcd
+```
+
+2. Install a verified working Zig bootstrap for Xcode 26.4:
+
+```bash
+./scripts/install-zig-autobuild.sh
+```
+
+3. Build Bun for iOS device:
+
+```bash
+WEBKIT_SRC=/absolute/path/to/WebKit \
+ZIG_PATH_OVERRIDE=/absolute/path/to/bootstrap-aarch64-macos-none \
+./scripts/build-ios-device.sh
+```
+
+The exact device build inputs and incompatibilities are documented in [`src/ios/BUILDING_DEVICE.md`](https://github.com/oven-sh/bun/blob/main/src/ios/BUILDING_DEVICE.md).
 
 ## C Embedding API
 
@@ -165,6 +190,26 @@ xcrun simctl launch --console booted com.example.TestApp
 ### "Library not loaded" Error
 
 Ensure `libbun.a` is properly linked and the binary is code-signed.
+
+### Device WebKit build fails in `OSAllocatorPOSIX.cpp`
+
+If you see errors such as:
+
+- `mach_vm.h unsupported`
+- `use of undeclared identifier 'mach_vm_map'`
+
+apply the device patch through `./scripts/build-ios-device-webkit.sh`. The patch is committed at `src/ios/patches/webkit-ios-device.patch`.
+
+### Bun's pinned Zig bootstrap fails on Xcode 26.4
+
+If `clone-zig` succeeds but `bun-zig.o` fails with unresolved Darwin/iOS symbols such as `__availability_version_check`, `_abort`, `_dispatch_queue_create`, or `_waitpid`, use:
+
+```bash
+./scripts/install-zig-autobuild.sh
+WEBKIT_SRC=/absolute/path/to/WebKit \
+ZIG_PATH_OVERRIDE=/absolute/path/to/bootstrap-aarch64-macos-none \
+./scripts/build-ios-device.sh
+```
 
 ### JIT Errors
 

@@ -82,19 +82,32 @@ stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
 The iOS build requires:
 - Xcode with iOS SDK
 - CMake 3.20+
-- Zig 0.13+
+- Zig 0.15.2 bootstrap
+
+### Simulator
 
 ```bash
-# Build for iOS Simulator (arm64)
 cmake -B build-ios-sim \
-    -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios.cmake \
-    -DIOS_PLATFORM=SIMULATOR64 \
+    -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-simulator.cmake \
     -DCMAKE_BUILD_TYPE=Release
 
 cmake --build build-ios-sim
-
-# Output: build-ios-sim/libbun.a
 ```
+
+### Device (reproducible C_LOOP build)
+
+```bash
+git clone https://github.com/oven-sh/WebKit.git /absolute/path/to/WebKit
+git -C /absolute/path/to/WebKit checkout 515344bc5d65aa2d4f9ff277b5fb944f0e051dcd
+
+./scripts/install-zig-autobuild.sh
+
+WEBKIT_SRC=/absolute/path/to/WebKit \
+ZIG_PATH_OVERRIDE=/absolute/path/to/bootstrap-aarch64-macos-none \
+./scripts/build-ios-device.sh
+```
+
+See [`BUILDING_DEVICE.md`](./BUILDING_DEVICE.md) for the exact WebKit patch, Zig bootstrap incompatibility, and staged header layout.
 
 ## Integration
 
@@ -109,3 +122,5 @@ cmake --build build-ios-sim
 - `embedding.c` - Embedding API implementation (thread management, I/O redirection)
 - `stubs.c` - Platform stubs for unavailable features (TCC, JIT)
 - `webkit_stubs.cpp` - WebKit/JSC symbols missing from iOS builds
+- `BUILDING_DEVICE.md` - Reproducible iOS device build path and incompatibilities
+- `patches/webkit-ios-device.patch` - WebKit device patch recovered from the validated `pi-ios` path

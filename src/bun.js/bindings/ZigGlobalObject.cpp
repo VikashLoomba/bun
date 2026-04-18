@@ -133,7 +133,9 @@
 #include "JSTransformStreamDefaultController.h"
 #include "JSURLPattern.h"
 #include "JSURLSearchParams.h"
+#if ENABLE(WEBASSEMBLY)
 #include "JSWasmStreamingCompiler.h"
+#endif
 #include "JSWebSocket.h"
 #include "JSWorker.h"
 #include "JSWritableStream.h"
@@ -3438,6 +3440,7 @@ JSC::JSValue EvalGlobalObject::moduleLoaderEvaluate(JSGlobalObject* lexicalGloba
     return result;
 }
 
+#if ENABLE(WEBASSEMBLY)
 extern "C" JSC::EncodedJSValue Zig__GlobalObject__getBodyStreamOrBytesForWasmStreaming(JSGlobalObject*, EncodedJSValue response, JSC::Wasm::StreamingCompiler* compiler);
 
 extern "C" void JSC__Wasm__StreamingCompiler__addBytes(JSC::Wasm::StreamingCompiler* compiler, const uint8_t* spanPtr, size_t spanSize)
@@ -3493,6 +3496,21 @@ JSC::JSPromise* GlobalObject::instantiateStreaming(JSGlobalObject* globalObject,
 {
     return handleResponseOnStreamingAction(globalObject, source, JSC::Wasm::CompilerMode::FullCompile, importObject);
 }
+#else
+extern "C" void JSC__Wasm__StreamingCompiler__addBytes(void*, const uint8_t*, size_t)
+{
+}
+
+JSC::JSPromise* GlobalObject::compileStreaming(JSGlobalObject* globalObject, JSC::JSValue)
+{
+    return JSC::JSPromise::rejectedPromise(globalObject, createError(globalObject, "WebAssembly is not enabled in this build"_s));
+}
+
+JSC::JSPromise* GlobalObject::instantiateStreaming(JSGlobalObject* globalObject, JSC::JSValue, JSC::JSObject*)
+{
+    return JSC::JSPromise::rejectedPromise(globalObject, createError(globalObject, "WebAssembly is not enabled in this build"_s));
+}
+#endif
 
 GlobalObject::PromiseFunctions GlobalObject::promiseHandlerID(Zig::FFIFunction handler)
 {

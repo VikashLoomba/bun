@@ -3,7 +3,9 @@
 #include "ZigGlobalObject.h"
 #include "helpers.h"
 #include "BunString.h"
+#if ENABLE(SAMPLING_PROFILER)
 #include <JavaScriptCore/SamplingProfiler.h>
+#endif
 #include <JavaScriptCore/VM.h>
 #include <JavaScriptCore/JSGlobalObject.h>
 #include <JavaScriptCore/ScriptExecutable.h>
@@ -20,6 +22,47 @@
 extern "C" void Bun__startCPUProfiler(JSC::VM* vm);
 extern "C" void Bun__stopCPUProfiler(JSC::VM* vm, BunString* outJSON, BunString* outText);
 extern "C" void Bun__setSamplingInterval(int intervalMicroseconds);
+
+#if !ENABLE(SAMPLING_PROFILER)
+
+void Bun__setSamplingInterval(int) {}
+
+namespace Bun {
+
+void setSamplingInterval(int) {}
+
+bool isCPUProfilerRunning()
+{
+    return false;
+}
+
+void startCPUProfiler(JSC::VM&)
+{
+}
+
+void stopCPUProfiler(JSC::VM&, WTF::String* outJSON, WTF::String* outText)
+{
+    if (outJSON)
+        *outJSON = WTF::String();
+    if (outText)
+        *outText = WTF::String();
+}
+
+} // namespace Bun
+
+extern "C" void Bun__startCPUProfiler(JSC::VM*)
+{
+}
+
+extern "C" void Bun__stopCPUProfiler(JSC::VM*, BunString* outJSON, BunString* outText)
+{
+    if (outJSON)
+        *outJSON = Bun::toStringRef(WTF::String());
+    if (outText)
+        *outText = Bun::toStringRef(WTF::String());
+}
+
+#else
 
 void Bun__setSamplingInterval(int intervalMicroseconds)
 {
@@ -1111,3 +1154,5 @@ extern "C" void Bun__stopCPUProfiler(JSC::VM* vm, BunString* outJSON, BunString*
     if (outText)
         *outText = Bun::toStringRef(textResult);
 }
+
+#endif

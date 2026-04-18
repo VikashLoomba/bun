@@ -28,6 +28,7 @@ endif()
 
 set(ZIG_COMMIT "c1423ff3fc7064635773a4a4616c5bf986eb00fe")
 optionx(ZIG_TARGET STRING "The zig target to use" DEFAULT ${DEFAULT_ZIG_TARGET})
+optionx(ZIG_PATH_OVERRIDE FILEPATH "Use an existing Zig bootstrap instead of downloading Bun's pinned bootstrap" DEFAULT "")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   if(ENABLE_ASAN)
@@ -66,7 +67,12 @@ optionx(ZIG_COMPILER_SAFE BOOL "Download a ReleaseSafe build of the Zig compiler
 setenv(ZIG_LOCAL_CACHE_DIR ${ZIG_LOCAL_CACHE_DIR})
 setenv(ZIG_GLOBAL_CACHE_DIR ${ZIG_GLOBAL_CACHE_DIR})
 
-setx(ZIG_PATH ${VENDOR_PATH}/zig)
+if(ZIG_PATH_OVERRIDE)
+  setx(ZIG_PATH ${ZIG_PATH_OVERRIDE})
+  message(STATUS "Using Zig from override path: ${ZIG_PATH}")
+else()
+  setx(ZIG_PATH ${VENDOR_PATH}/zig)
+endif()
 
 if(WIN32)
   setx(ZIG_EXECUTABLE ${ZIG_PATH}/zig.exe)
@@ -80,21 +86,28 @@ set(CMAKE_ZIG_FLAGS
   --zig-lib-dir ${ZIG_PATH}/lib
 )
 
-register_command(
-  TARGET
-    clone-zig
-  COMMENT
-    "Downloading zig"
-  COMMAND
-    ${CMAKE_COMMAND}
-      -DZIG_PATH=${ZIG_PATH}
-      -DZIG_COMMIT=${ZIG_COMMIT}
-      -DENABLE_ASAN=${ENABLE_ASAN}
-      -DENABLE_VALGRIND=${ENABLE_VALGRIND}
-      -DZIG_COMPILER_SAFE=${ZIG_COMPILER_SAFE}
-      -P ${CWD}/cmake/scripts/DownloadZig.cmake
-  SOURCES
-    ${CWD}/cmake/scripts/DownloadZig.cmake
-  OUTPUTS
-    ${ZIG_EXECUTABLE}
-)
+if(ZIG_PATH_OVERRIDE)
+  add_custom_target(clone-zig
+    COMMAND ${CMAKE_COMMAND} -E true
+    COMMENT "Using Zig from ${ZIG_PATH}"
+  )
+else()
+  register_command(
+    TARGET
+      clone-zig
+    COMMENT
+      "Downloading zig"
+    COMMAND
+      ${CMAKE_COMMAND}
+        -DZIG_PATH=${ZIG_PATH}
+        -DZIG_COMMIT=${ZIG_COMMIT}
+        -DENABLE_ASAN=${ENABLE_ASAN}
+        -DENABLE_VALGRIND=${ENABLE_VALGRIND}
+        -DZIG_COMPILER_SAFE=${ZIG_COMPILER_SAFE}
+        -P ${CWD}/cmake/scripts/DownloadZig.cmake
+    SOURCES
+      ${CWD}/cmake/scripts/DownloadZig.cmake
+    OUTPUTS
+      ${ZIG_EXECUTABLE}
+  )
+endif()

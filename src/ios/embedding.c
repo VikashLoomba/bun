@@ -19,8 +19,8 @@ extern void bun_main(void);
 extern void (*bun_ios_exit_callback)(uint32_t code);
 
 /* Argument storage (read by bun.zig) */
-extern int bun_ios_argc;
-extern char** bun_ios_argv;
+int bun_ios_argc = 0;
+char** bun_ios_argv = NULL;
 
 /* Thread arguments structure */
 struct bun_thread_args {

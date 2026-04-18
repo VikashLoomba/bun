@@ -1,4 +1,7 @@
 #include "config.h"
+
+#if ENABLE(WEBASSEMBLY)
+
 #include "JSWasmStreamingCompiler.h"
 
 #include "DOMClientIsoSubspaces.h"
@@ -236,3 +239,5 @@ Wasm::StreamingCompiler* JSWasmStreamingCompiler::toWrapped(VM& vm, JSValue valu
 }
 
 }
+
+#endif

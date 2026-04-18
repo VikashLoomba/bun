@@ -703,8 +703,13 @@ endif()
 
 set(ZIG_ENVIRONMENT)
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set(IOS_SDK_NAME iphonesimulator)
+  else()
+    set(IOS_SDK_NAME iphoneos)
+  endif()
   execute_process(
-    COMMAND xcrun --sdk iphonesimulator --show-sdk-path
+    COMMAND xcrun --sdk ${IOS_SDK_NAME} --show-sdk-path
     OUTPUT_VARIABLE IOS_SDK_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
